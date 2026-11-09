@@ -1,0 +1,9 @@
+package-lock.json
+PROJECT.md
+.atlas/
+build/
+.svelte-kit/
+playwright-report/
+test-results/
+migrations/
+infra/
