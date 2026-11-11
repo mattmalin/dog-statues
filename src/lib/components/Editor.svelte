@@ -48,6 +48,9 @@
   const initial = start();
   let fields = $state(initial.fields);
   let photos = $state(initial.photos);
+  const missingAlt = $derived(
+    photos.filter((photo) => photo.rights_status === 'approved' && !photo.alt_text.trim()).length,
+  );
   let revision = $state(initial.revision);
   let slug = $state(initial.slug);
   let webStatus = $state(initial.webStatus);
@@ -323,10 +326,13 @@
     if (publishing || saving || conflict || uploadBusy || photoBusy) return;
     publicationNotice = '';
     publicationError = '';
+    const allowMissingAlt = action === 'publish' && missingAlt > 0;
     if (
       !confirm(
         action === 'publish'
-          ? 'Make this statue and its approved photos public on the Atlas?'
+          ? allowMissingAlt
+            ? 'Publish with missing alt text? The website will use a generic description until you add your own.'
+            : 'Make this statue and its approved photos public on the Atlas?'
           : 'Hide this statue page and its photos from the public?',
       )
     )
@@ -338,7 +344,7 @@
         revision: number;
         slug: string | null;
         web_status: Statue['web_status'];
-      }>(api + '/publication', 'POST', { action, revision, waivePhoto });
+      }>(api + '/publication', 'POST', { action, revision, waivePhoto, allowMissingAlt });
       revision = result.revision;
       slug = result.slug;
       webStatus = result.web_status;
@@ -442,6 +448,7 @@
         {#each photos as photo, index (photo.id)}
           <PhotoCard
             {photo}
+            published={webStatus === 'published'}
             path={api + '/photos/' + photo.id}
             cover={cover === photo.id}
             first={index === 0}
@@ -638,6 +645,14 @@
     </section>
     <section class="panel" id="publishing">
       <h2>Publishing</h2>
+      {#if missingAlt}
+        <p class="hint" role="status">
+          {missingAlt === 1
+            ? 'One approved photo needs alt text.'
+            : `${missingAlt} approved photos need alt text.`}
+          <a href="#photos">Add alt text in Photos</a>.
+        </p>
+      {/if}
       {#if webStatus === 'published' && slug}
         <p>Saved changes appear on the website.</p>
         <div class="button-row">
@@ -652,15 +667,16 @@
         </div>
       {:else}
         <p class="hint">
-          Add a name, public description and location. Approve at least one photo with alt text, or
-          choose to publish without photos.
+          Add a name, public description and location. Approve at least one photo, or choose to
+          publish without photos.
         </p>
         <label class="check"
           ><input type="checkbox" bind:checked={waivePhoto} /> Allow publication without photos</label
         >
         <button
           disabled={publishing || saving || conflict || uploadBusy || photoBusy}
-          onclick={() => publication('publish')}>Publish to website</button
+          onclick={() => publication('publish')}
+          >{missingAlt ? 'Publish without alt text' : 'Publish to website'}</button
         >
       {/if}
       {#if publicationError}<p role="alert" class="error">{publicationError}</p>{/if}

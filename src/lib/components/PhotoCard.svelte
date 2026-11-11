@@ -9,6 +9,7 @@
     last,
     busy,
     capture,
+    published,
     onedit,
   }: {
     photo: Photo;
@@ -18,6 +19,7 @@
     last: boolean;
     busy: boolean;
     capture: boolean;
+    published: boolean;
     onedit: (
       action: 'details' | 'cover' | 'earlier' | 'later' | 'delete',
       details?: { alt_text: string; credit: string; rights_status: Photo['rights_status'] },
@@ -40,6 +42,14 @@
   async function save(event: SubmitEvent) {
     event.preventDefault();
     if (
+      published &&
+      approved &&
+      !alt.trim() &&
+      (photo.rights_status !== 'approved' || photo.alt_text.trim()) &&
+      !confirm('This photo will appear on the live page without your alt text. Save anyway?')
+    )
+      return;
+    if (
       await onedit('details', {
         alt_text: alt,
         credit,
@@ -60,6 +70,9 @@
         ? 'Approved for website'
         : 'Private photo'}</small
     >
+    {#if photo.rights_status === 'approved' && !photo.alt_text.trim()}
+      <small>Alt text missing</small>
+    {/if}
     {#if !capture || open}
       <div class="photo-actions">
         <button
@@ -108,10 +121,12 @@
         >Alt text <input
           maxlength="500"
           bind:value={alt}
-          required={approved}
           placeholder="Describe what the photo shows"
         /></label
       >
+      {#if approved && !alt.trim()}
+        <p class="hint">Add a short description for people who use screen readers.</p>
+      {/if}
       <label
         >Photo credit <input
           maxlength="300"

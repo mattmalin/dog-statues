@@ -31,6 +31,7 @@ export const publishSchema = z.strictObject({
   revision: revisionSchema,
   action: z.enum(['publish', 'unpublish']),
   waivePhoto: z.boolean(),
+  allowMissingAlt: z.boolean().optional(),
 });
 export const photoEditSchema = z.strictObject({
   action: z.enum(['details', 'cover', 'earlier', 'later', 'delete']),

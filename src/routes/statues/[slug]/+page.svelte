@@ -27,7 +27,7 @@
     <figure class="cover">
       <img
         src={'/media/' + data.cover.id}
-        alt={data.cover.alt_text}
+        alt={data.cover.alt_text || 'Photo of ' + data.statue.title}
         width={data.cover.width}
         height={data.cover.height}
       />
@@ -55,7 +55,7 @@
           <figure>
             <img
               src={'/media/' + photo.id}
-              alt={photo.alt_text}
+              alt={photo.alt_text || 'Photo of ' + data.statue.title}
               width={photo.width}
               height={photo.height}
               loading="lazy"

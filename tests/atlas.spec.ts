@@ -129,6 +129,62 @@ test('capture three photos, reopen, edit, publish and hide with private media se
   );
 });
 
+test('publishing without alt text requires confirmation and keeps a reminder until it is added', async ({
+  page,
+  request,
+}) => {
+  await signIn(page);
+  const editor = await create(page);
+  const jpeg = await sharp({
+    create: { width: 32, height: 24, channels: 3, background: '#4a725e' },
+  })
+    .jpeg()
+    .toBuffer();
+  await page.getByLabel('Choose photos').setInputFiles(photo('Statue.jpg', jpeg));
+  await expect(page.getByText('Private photo', { exact: true })).toBeVisible();
+  await page.goto(editor);
+  await page.getByLabel('Statue name').fill('Alt text QA statue');
+  await page.getByLabel('City', { exact: true }).fill('London');
+  await page.getByLabel('Country', { exact: true }).fill('United Kingdom');
+  await page.getByLabel('Website description').fill('Test record for the photo description flow.');
+  await page.getByRole('button', { name: 'Photo details' }).click();
+  await page.getByRole('checkbox', { name: /permission to show/ }).check();
+  await page.getByRole('button', { name: 'Save photo details' }).click();
+  await expect(page.getByText('One approved photo needs alt text.')).toBeVisible();
+  await expect(page.getByText('Saved to Atlas', { exact: true })).toBeVisible();
+
+  const api = '/api' + editor;
+  const { statue, photos } = await (await page.request.get(api)).json();
+  const unconfirmed = await page.request.post(api + '/publication', {
+    headers,
+    data: { action: 'publish', revision: statue.revision, waivePhoto: false },
+  });
+  expect(unconfirmed.status()).toBe(422);
+
+  const publish = page.getByRole('button', { name: 'Publish without alt text' });
+  page.once('dialog', (dialog) => dialog.dismiss());
+  await publish.click();
+  await expect(publish).toBeVisible();
+  page.once('dialog', (dialog) => dialog.accept());
+  await publish.click();
+  const link = page.getByRole('link', { name: 'View public page' });
+  await expect(link).toBeVisible();
+  const slug = (await link.getAttribute('href'))!;
+  expect(await (await request.get(slug)).text()).toContain('alt="Photo of Alt text QA statue"');
+  expect((await request.get('/media/' + photos[0].id)).status()).toBe(200);
+
+  await page.reload();
+  await expect(page.getByText('Alt text missing', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Photo details' }).click();
+  await page.getByLabel('Alt text').fill('A bronze dog sitting on a stone plinth');
+  await page.getByRole('button', { name: 'Save photo details' }).click();
+  await expect(page.getByText('Alt text missing', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('One approved photo needs alt text.')).toHaveCount(0);
+  expect(await (await request.get(slug)).text()).toContain(
+    'alt="A bronze dog sitting on a stone plinth"',
+  );
+});
+
 test('failed autosave survives reload and upload validation preserves the draft', async ({
   page,
 }) => {

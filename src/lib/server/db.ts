@@ -67,7 +67,10 @@ function sqliteClient(): Client {
 }
 
 function sqlServerClient(connectionString: string): Client {
-  const pool = new sql.ConnectionPool(connectionString);
+  const settings = sql.ConnectionPool.parseConnectionString(connectionString);
+  // Route IDs and existing Blob keys use lowercase UUIDs.
+  settings.options.lowerCaseGuids = true;
+  const pool = new sql.ConnectionPool(settings);
   let connection: Promise<sql.ConnectionPool> | undefined;
   function connect() {
     connection ??= pool.connect().catch((cause) => {

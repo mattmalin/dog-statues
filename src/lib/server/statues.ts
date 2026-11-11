@@ -108,8 +108,7 @@ function validatePublication(fields: Fields, photosReady: boolean) {
   ) {
     error(422, 'Add a city and country, or both coordinates.');
   }
-  if (!photosReady)
-    error(422, 'Approve a photo with alt text, or explicitly publish without photos.');
+  if (!photosReady) error(422, 'Approve a photo, or explicitly publish without photos.');
 }
 
 export async function publish(
@@ -117,6 +116,7 @@ export async function publish(
   revision: number,
   action: 'publish' | 'unpublish',
   waivePhoto: boolean,
+  allowMissingAlt = false,
 ) {
   return database().write(async (db) => {
     const row = await lock(db, id);
@@ -125,6 +125,15 @@ export async function publish(
     if (action === 'publish') {
       const photos = await getPhotos(db, id);
       validatePublication(row, waivePhoto || photos.some(isPublicPhoto));
+      if (
+        !allowMissingAlt &&
+        photos.some((photo) => isPublicPhoto(photo) && !photo.alt_text.trim())
+      ) {
+        error(
+          422,
+          'Some approved photos need alt text. Review the photos or confirm publication without alt text.',
+        );
+      }
       const slug = row.slug ?? slugFor(row.title, id);
       await db.run(
         `UPDATE statues SET slug=@slug, web_status='published', web_published_at=COALESCE(web_published_at,@now),
@@ -141,8 +150,7 @@ export async function publish(
   });
 }
 
-const isPublicPhoto = (photo: Photo) =>
-  photo.rights_status === 'approved' && Boolean(photo.alt_text.trim());
+const isPublicPhoto = (photo: Photo) => photo.rights_status === 'approved';
 
 export async function existingPhoto(statue: string, id: string) {
   const [row] = await database().all<Photo>(
@@ -209,9 +217,6 @@ export async function editPhoto(
         credit: edit.credit?.trim() ?? photo.credit,
         rights_status: edit.rights_status ?? photo.rights_status,
       };
-      if (edit.action === 'details' && next.rights_status === 'approved' && !next.alt_text) {
-        error(422, 'Write alt text before approving this photo.');
-      }
       if (
         row.web_status === 'published' &&
         !row.photo_waiver &&
@@ -264,7 +269,7 @@ export async function getPublicStatue(slug: string) {
   if (!statue) error(404, 'Statue not found.');
   const photos = await db.all<PublicPhoto>(
     `SELECT m.id,m.alt_text,m.credit,m.width,m.height FROM media_assets m JOIN statues s ON s.id=m.statue_id
-      WHERE s.slug=@slug AND s.web_status='published' AND m.rights_status='approved' AND m.alt_text<>''
+      WHERE s.slug=@slug AND s.web_status='published' AND m.rights_status='approved'
       ORDER BY m.position,m.id`,
     { slug },
   );
@@ -275,7 +280,7 @@ export async function getPublicStatue(slug: string) {
 export async function publicPhoto(id: string) {
   const [row] = await database().all<{ statue_id: string }>(
     `SELECT m.statue_id FROM media_assets m JOIN statues s ON s.id=m.statue_id WHERE m.id=@id
-      AND s.web_status='published' AND m.rights_status='approved' AND m.alt_text<>''`,
+      AND s.web_status='published' AND m.rights_status='approved'`,
     { id },
   );
   if (!row) error(404, 'Photo not found.');
