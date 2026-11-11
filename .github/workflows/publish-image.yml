@@ -1,0 +1,35 @@
+name: Publish Atlas image
+on: workflow_dispatch
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Build image
+        shell: bash
+        run: |
+          image="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/dog-statue-atlas"
+          tag="$image:$GITHUB_SHA"
+          docker build --platform linux/amd64 --tag "$tag" \
+            --label "org.opencontainers.image.source=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" .
+      - name: Publish image and report its digest
+        shell: bash
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          image="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/dog-statue-atlas"
+          tag="$image:$GITHUB_SHA"
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          docker push "$tag" | tee "$RUNNER_TEMP/atlas-docker-push.log"
+          digest=$(sed -nE 's/.*digest: (sha256:[a-f0-9]{64}).*/\1/p' "$RUNNER_TEMP/atlas-docker-push.log" | tail -n 1)
+          if [[ -z "$digest" ]]; then
+            echo 'Docker push did not report an image digest.' >&2
+            exit 1
+          fi
+          printf 'Image for Azure\n\n`%s@%s`\n' "$image" "$digest" >> "$GITHUB_STEP_SUMMARY"
