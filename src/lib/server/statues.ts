@@ -259,6 +259,16 @@ export async function editPhoto(
   });
 }
 
+export function listFeedEntries() {
+  return database().all<
+    Pick<PublicStatue, 'slug' | 'title' | 'short_summary'> & Pick<Statue, 'id' | 'web_published_at'>
+  >(
+    `SELECT id, slug, title, short_summary, web_published_at FROM statues
+    WHERE web_status = 'published' AND slug IS NOT NULL
+    ORDER BY web_published_at DESC, slug`,
+  );
+}
+
 export function listPublicStatues() {
   return database().all<
     Pick<PublicStatue, 'slug' | 'title' | 'short_summary' | 'city' | 'region' | 'country'> & {

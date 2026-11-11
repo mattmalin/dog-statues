@@ -5,6 +5,7 @@
 
 <svelte:head>
   <title>Dog Statue Atlas</title>
+  <link rel="alternate" type="application/rss+xml" title="Dog Statue Atlas" href="/rss.xml" />
   <meta
     name="description"
     content="A field guide to dog statues and memorials, starting in London."
@@ -17,6 +18,7 @@
   </section>
   <section class="directory" aria-labelledby="directory-heading">
     <h2 id="directory-heading">Explore the statues</h2>
+    <p><a href="/rss.xml">Subscribe via RSS</a></p>
     {#if data.statues.length}
       <ul>
         {#each data.statues as statue (statue.slug)}

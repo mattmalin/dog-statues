@@ -94,6 +94,7 @@ test('capture three photos, reopen, edit, publish and hide with private media se
   await expect(page.getByText('Saved to Atlas', { exact: true })).toBeVisible();
   const draftSlug = '/statues/fictional-qa-statue-' + editor.split('/').at(-1);
   expect(await (await request.get('/')).text()).not.toContain(`href="${draftSlug}"`);
+  expect(await (await request.get('/rss.xml')).text()).not.toContain(draftSlug);
 
   page.on('dialog', (dialog) => dialog.accept());
   await page.getByRole('button', { name: 'Publish to website' }).click();
@@ -104,6 +105,14 @@ test('capture three photos, reopen, edit, publish and hide with private media se
   const homepage = await request.get('/');
   expect(homepage.status()).toBe(200);
   const directory = await homepage.text();
+  expect(directory).toContain('href="/rss.xml"');
+  const feed = await request.get('/rss.xml');
+  expect(feed.status()).toBe(200);
+  expect(feed.headers()['content-type']).toContain('application/rss+xml');
+  const rss = await feed.text();
+  expect(rss).toContain(`<link>${origin}${slug}</link>`);
+  expect(rss).toContain('<title>Fictional QA Statue</title>');
+  expect(rss).not.toMatch(/PRIVATE RESEARCH MARKER|PRIVATE CAPTION MARKER/);
   expect(directory).toContain(`href="${slug}"`);
   expect(directory).toContain(`${media}?size=thumb`);
   expect(directory).not.toMatch(/PRIVATE RESEARCH MARKER|PRIVATE CAPTION MARKER|One\.jpg|Two\.jpg/);
@@ -129,6 +138,7 @@ test('capture three photos, reopen, edit, publish and hide with private media se
   await expect(page.getByText('Approve another photo or unpublish')).toBeVisible();
   await page.getByRole('button', { name: 'Unpublish' }).click();
   await expect(page.getByText('Statue page hidden.')).toBeVisible();
+  expect(await (await request.get('/rss.xml')).text()).not.toContain(slug);
   expect(await (await request.get('/')).text()).not.toContain(`href="${slug}"`);
   expect((await request.get(slug)).status()).toBe(404);
   expect((await request.get(media)).status()).toBe(404);
