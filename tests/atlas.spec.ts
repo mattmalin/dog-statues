@@ -92,12 +92,21 @@ test('capture three photos, reopen, edit, publish and hide with private media se
     .fill('Fixture only. <script>window.bad=true</script>');
   await page.getByLabel('Instagram caption').fill('PRIVATE CAPTION MARKER');
   await expect(page.getByText('Saved to Atlas', { exact: true })).toBeVisible();
+  const draftSlug = '/statues/fictional-qa-statue-' + editor.split('/').at(-1);
+  expect(await (await request.get('/')).text()).not.toContain(`href="${draftSlug}"`);
 
   page.on('dialog', (dialog) => dialog.accept());
   await page.getByRole('button', { name: 'Publish to website' }).click();
   const link = page.getByRole('link', { name: 'View public page' });
   await expect(link).toBeVisible();
   const slug = (await link.getAttribute('href'))!;
+  expect(slug).toBe(draftSlug);
+  const homepage = await request.get('/');
+  expect(homepage.status()).toBe(200);
+  const directory = await homepage.text();
+  expect(directory).toContain(`href="${slug}"`);
+  expect(directory).toContain(`${media}?size=thumb`);
+  expect(directory).not.toMatch(/PRIVATE RESEARCH MARKER|PRIVATE CAPTION MARKER|One\.jpg|Two\.jpg/);
   const published = await request.get(slug);
   expect(published.status()).toBe(200);
   const html = await published.text();
@@ -120,6 +129,7 @@ test('capture three photos, reopen, edit, publish and hide with private media se
   await expect(page.getByText('Approve another photo or unpublish')).toBeVisible();
   await page.getByRole('button', { name: 'Unpublish' }).click();
   await expect(page.getByText('Statue page hidden.')).toBeVisible();
+  expect(await (await request.get('/')).text()).not.toContain(`href="${slug}"`);
   expect((await request.get(slug)).status()).toBe(404);
   expect((await request.get(media)).status()).toBe(404);
   expect((await page.request.get(coverUrl + '?size=original')).status()).toBe(200);

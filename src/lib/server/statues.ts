@@ -259,6 +259,30 @@ export async function editPhoto(
   });
 }
 
+export function listPublicStatues() {
+  return database().all<
+    Pick<PublicStatue, 'slug' | 'title' | 'short_summary' | 'city' | 'region' | 'country'> & {
+      photo_id: string | null;
+      alt_text: string | null;
+      credit: string | null;
+    }
+  >(
+    `WITH cards AS (
+      SELECT s.slug, s.title, s.short_summary, s.city, s.region, s.country, s.web_published_at,
+        m.id AS photo_id, m.alt_text, m.credit,
+        ROW_NUMBER() OVER (
+          PARTITION BY s.id
+          ORDER BY CASE WHEN m.id = s.cover_media_id THEN 0 ELSE 1 END, m.position, m.id
+        ) AS photo_rank
+      FROM statues s
+      LEFT JOIN media_assets m ON m.statue_id = s.id AND m.rights_status = 'approved'
+      WHERE s.web_status = 'published' AND s.slug IS NOT NULL
+    )
+    SELECT slug, title, short_summary, city, region, country, photo_id, alt_text, credit
+    FROM cards WHERE photo_rank = 1 ORDER BY web_published_at DESC, slug`,
+  );
+}
+
 export async function getPublicStatue(slug: string) {
   const db = database();
   const [statue] = await db.all<PublicStatue>(
