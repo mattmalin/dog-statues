@@ -1,5 +1,7 @@
 # Azure infrastructure draft
 
+For the deployed Atlas, see [Azure operations and backups](OPERATIONS.md).
+
 Milestone 0 deliverable for review. Deployment and the cost review belong to Milestone 2.
 
 The template proposes UK South, a Consumption app at zero minimum replicas, a General Purpose SQL Serverless database with the free allowance explicitly requested and exhaustion set to AutoPause, and private Hot LRS Blob Storage. Container Apps usage, Blob storage, transactions and egress can incur charges. Price the selected region, registry, SQL eligibility, network and workload before approval. An Azure budget alert reports spend and does not enforce a cap. See [Container Apps billing](https://learn.microsoft.com/en-us/azure/container-apps/billing) and [Azure SQL free offer](https://learn.microsoft.com/en-us/azure/azure-sql/database/free-tier).
@@ -8,6 +10,8 @@ The template proposes UK South, a Consumption app at zero minimum replicas, a Ge
 
 - Compile the template with `az bicep build --file infra/main.bicep`. Run ARM what-if in the approved subscription and confirm the free offer is available. The draft has been checked with the standalone Bicep compiler.
 - Supply a digest-pinned image, subscription, separate resource group, single-tenant Entra app registration, tenant ID, owner object ID and migration principal. Supply the Entra secret via a secure parameter. The registration needs an exact callback of `https://<host>/.auth/login/aad/callback`.
+- In the app registration, open **Authentication** and enable **ID tokens (used for implicit and hybrid flows)**. Container Apps requests an ID token during browser sign-in. The CLI equivalent is `az ad app update --id <application-client-id> --enable-id-token-issuance true`.
+- Use the client credential's **Value** field for `entraClientSecret`. If you rotate it, update the `entra-client-secret` Container Apps secret, restart the active revision and use the current credential for future Bicep deployments.
 - Decide the SQL connectivity rules from the app and migration runner. The template opens no SQL firewall rule. Restrict traffic to approved ingress paths and avoid a broad Azure-services exception.
 - Keep `enablePublicIngress` false for the initial deployment. Confirm Easy Auth is enabled, the owner and tenant are correctly configured, the app listens behind Easy Auth only, and no container port is reachable directly. If using a custom domain, set `ORIGIN` to that exact HTTPS origin and update the Entra callback.
 
