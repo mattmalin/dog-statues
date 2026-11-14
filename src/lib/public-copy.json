@@ -1,21 +1,21 @@
 {
   "site": {
-    "name": "Dog Statue Atlas",
+    "name": "Dog Statues",
     "skip": "Skip to content",
-    "owner": "Owner area",
+    "owner": "Admin area",
     "photoAltPrefix": "Photo of "
   },
   "home": {
-    "heading": "Dogs worth looking up to.",
-    "introduction": "A field guide to dog statues and memorials, starting in London.",
-    "metadataDescription": "A field guide to dog statues and memorials, starting in London.",
-    "directory": "Explore the statues",
+    "heading": "Dog Statues",
+    "introduction": "Gathering the dog statues and sculptures around the world",
+    "metadataDescription": "A collection of dog statues around the world, mainly starting in London.",
+    "directory": "Dog statues",
     "subscribe": "Subscribe via RSS",
     "empty": "No statues have been published yet."
   },
   "statue": {
-    "home": "Atlas home",
-    "record": "Statue record",
+    "home": "Dog statues home",
+    "record": "Dog statue record",
     "location": "Find the statue",
     "maps": "Open in maps",
     "gallery": "Gallery",
@@ -24,9 +24,9 @@
   "error": {
     "missing": "This page is unavailable",
     "other": "Something went wrong",
-    "home": "Back to the Atlas"
+    "home": "Back to homepage"
   },
   "rss": {
-    "description": "Published dog statues and memorials from the Dog Statue Atlas."
+    "description": "Gathering the dog statues and sculptures around the world."
   }
 }
