@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { googleMapsUrl } from '$lib/maps';
   import type { PageProps } from './$types';
   let { data }: PageProps = $props();
   let place = $derived(
@@ -9,6 +10,7 @@
       ? data.statue.latitude + ',' + data.statue.longitude
       : [data.statue.address, place, data.statue.postal_code].filter(Boolean).join(', '),
   );
+  const pin = $derived(googleMapsUrl(data.statue.google_maps_url)?.href);
 </script>
 
 <svelte:head>
@@ -35,14 +37,16 @@
     </figure>
   {/if}
   <div class="story">{data.statue.web_description}</div>
-  {#if location}
+  {#if location || pin}
     <section class="panel public-location">
       <h2>Find the statue</h2>
-      <p>
-        {[data.statue.address, place, data.statue.postal_code].filter(Boolean).join(', ') ||
-          location}
-      </p>
-      <a href={'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(location)}
+      {#if location}<p>
+          {[data.statue.address, place, data.statue.postal_code].filter(Boolean).join(', ') ||
+            location}
+        </p>{/if}
+      <a
+        href={pin ??
+          'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(location)}
         >Open in maps ↗</a
       >
     </section>

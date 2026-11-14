@@ -125,7 +125,7 @@
       if (value) {
         const recovery = JSON.parse(value) as Recovery;
         if (JSON.stringify(recovery.fields) !== saved) {
-          fields = recovery.fields;
+          fields = { ...initialFields, ...recovery.fields };
           conflict = recovery.revision !== revision;
           if (conflict) recoveryBase = recovery.revision;
         }
@@ -387,6 +387,48 @@
     }
   }
 
+  let pinImporting = $state(false);
+  let pinNotice = $state('');
+
+  async function importPin() {
+    const url = fields.google_maps_url.trim();
+    const previous = [fields.latitude, fields.longitude, fields.address];
+    pinImporting = true;
+    pinNotice = '';
+    try {
+      const result = await send<{
+        coordinates: { latitude: number; longitude: number } | null;
+        address?: string;
+      }>('/api/admin/maps-pin', 'POST', { url });
+      if (
+        url !== fields.google_maps_url.trim() ||
+        previous.some(
+          (value, index) => value !== [fields.latitude, fields.longitude, fields.address][index],
+        )
+      ) {
+        pinNotice = 'Location changed while importing. Try again to use the pin.';
+        return;
+      }
+      if (result.coordinates) {
+        fields.latitude = result.coordinates.latitude;
+        fields.longitude = result.coordinates.longitude;
+      }
+      if (result.address) fields.address = result.address;
+      changed();
+      pinNotice = result.coordinates
+        ? result.address
+          ? 'Coordinates and address imported.'
+          : 'Coordinates imported. Check or enter the street address.'
+        : result.address
+          ? 'Address imported. Enter the pin coordinates if available.'
+          : 'This link has no importable pin coordinates or street address.';
+    } catch (cause) {
+      pinNotice = message(cause);
+    } finally {
+      pinImporting = false;
+    }
+  }
+
   function coordinate(value: number | undefined) {
     return value ?? null;
   }
@@ -577,6 +619,24 @@
   {#if !capture || advanced}
     <section class="panel" id="location">
       <h2>Location</h2>
+      <label
+        >Google Maps pin link<input
+          type="url"
+          inputmode="url"
+          maxlength="2048"
+          bind:value={fields.google_maps_url}
+          oninput={changed}
+        /></label
+      >
+      <button
+        type="button"
+        class="secondary"
+        disabled={pinImporting || !fields.google_maps_url.trim()}
+        onclick={importPin}
+      >
+        {pinImporting ? 'Importing pin…' : 'Import location from pin'}
+      </button>
+      {#if pinNotice}<p class="hint" role="status">{pinNotice}</p>{/if}
       <label
         >Street address<input
           maxlength="320"

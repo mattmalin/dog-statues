@@ -87,6 +87,12 @@ test('capture three photos, reopen, edit, publish and hide with private media se
   await page.getByLabel('Statue name').fill('Fictional QA Statue');
   await page.getByLabel('City', { exact: true }).fill('London');
   await page.getByLabel('Country', { exact: true }).fill('United Kingdom');
+  const pin = 'https://www.google.com/maps/place/10+Test+Street,+London/data=!3d51.501!4d-0.141';
+  await page.getByLabel('Google Maps pin link').fill(pin);
+  await page.getByRole('button', { name: 'Import location from pin' }).click();
+  await expect(page.getByLabel('Latitude')).toHaveValue('51.501');
+  await expect(page.getByLabel('Longitude')).toHaveValue('-0.141');
+  await expect(page.getByLabel('Street address')).toHaveValue('10 Test Street, London');
   await page
     .getByLabel('Website description')
     .fill('Fixture only. <script>window.bad=true</script>');
@@ -138,6 +144,7 @@ test('capture three photos, reopen, edit, publish and hide with private media se
   const published = await request.get(slug);
   expect(published.status()).toBe(200);
   const html = await published.text();
+  expect(html).toContain(`href="${pin}"`);
   expect(html).toContain('Fictional QA Statue');
   expect(html).toContain('A green test image');
   expect(html).not.toMatch(

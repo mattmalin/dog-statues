@@ -1,0 +1,1 @@
+ALTER TABLE statues ADD COLUMN google_maps_url TEXT NOT NULL DEFAULT '';

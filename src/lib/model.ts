@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { googleMapsUrl } from './maps';
 
 export const idSchema = z.uuidv4();
 export const maxUpload = 25 * 1024 * 1024;
@@ -16,6 +17,12 @@ export const fieldsSchema = z
     region: z.string().max(100),
     country: z.string().max(100),
     postal_code: z.string().max(30),
+    google_maps_url: z
+      .string()
+      .trim()
+      .max(2048)
+      .refine((value) => !value || googleMapsUrl(value), 'Enter a Google Maps link.')
+      .default(''),
     latitude: z.number().min(-90).max(90).nullable(),
     longitude: z.number().min(-180).max(180).nullable(),
     editorial_status: z.enum(['inbox', 'draft', 'ready']),
@@ -52,6 +59,7 @@ export const initialFields: Fields = {
   region: '',
   country: '',
   postal_code: '',
+  google_maps_url: '',
   latitude: null,
   longitude: null,
   editorial_status: 'inbox',
@@ -94,6 +102,7 @@ export type PublicStatue = Pick<
   | 'region'
   | 'country'
   | 'postal_code'
+  | 'google_maps_url'
   | 'latitude'
   | 'longitude'
   | 'cover_media_id'

@@ -22,6 +22,12 @@ Open [the owner sign-in](http://127.0.0.1:5173/admin) and use that passphrase. V
 
 For real photos and notes you want to keep outside Dropbox sync, set `ATLAS_DATA_DIR` in `.env` to a local directory outside your Dropbox folder.
 
+## Import a Google Maps pin
+
+In the statue editor, paste a Google Maps share link under **Location** and select **Import location from pin**. In quick add, open **Add more details** to reach Location. Check the coordinates and address before publishing. The existing public maps link opens the saved pin when present.
+
+The import expands supported Google short links and uses coordinates and street addresses when the resulting URL contains them. A pin with coordinates alone needs an address lookup. Set the optional server variable `ATLAS_REVERSE_GEOCODER_URL` to a trusted reverse-geocoding endpoint that accepts `lat`, `lon`, and `format=jsonv2`, returns `display_name`, and permits storing and publishing the address. Configure the provider's attribution if required. Otherwise enter the address manually. Apply `003_google_maps_pin.sql` via the usual migration command before deploying to Azure SQL. Local SQLite applies its migration when opened.
+
 ## Instagram publishing
 
 In the full owner editor, **Open in Instagram** prepares the approved photos for the device share menu. Instagram handles the account, audience and final share. The **Publish to @dogstatues** button previews the selected photos and caption, then publishes a public feed post when you confirm in the Atlas. Both use the website description followed by `Location: City, Country`.

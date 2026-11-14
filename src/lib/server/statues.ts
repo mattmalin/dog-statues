@@ -298,7 +298,7 @@ export function listPublicStatues() {
 export async function getPublicStatue(slug: string) {
   const db = database();
   const [statue] = await db.all<PublicStatue>(
-    `SELECT slug,title,short_summary,web_description,address,city,region,country,postal_code,
+    `SELECT slug,title,short_summary,web_description,address,city,region,country,postal_code,google_maps_url,
       latitude,longitude,cover_media_id FROM statues WHERE slug=@slug AND web_status='published'`,
     { slug },
   );

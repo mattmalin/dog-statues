@@ -27,6 +27,10 @@ function sqliteClient(): Client {
       db.exec(readFileSync('migrations/sqlite/002_instagram.sql', 'utf8'));
       db.exec('PRAGMA user_version=2');
     }
+    if (version < 3) {
+      db.exec(readFileSync('migrations/sqlite/003_google_maps_pin.sql', 'utf8'));
+      db.exec('PRAGMA user_version=3');
+    }
     db.exec('COMMIT');
   } catch (cause) {
     db.exec('ROLLBACK');
