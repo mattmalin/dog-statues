@@ -12,6 +12,7 @@
   } from '$lib/model';
   import { message, RequestError, send, uploadId } from '$lib/client';
   import PhotoCard from './PhotoCard.svelte';
+  import InstagramShare from './InstagramShare.svelte';
 
   let {
     statue,
@@ -643,6 +644,15 @@
       >
       <p class="hint" role="status">{copyNotice}</p>
     </section>
+    {#if !capture}
+      <InstagramShare
+        {api}
+        {photos}
+        description={fields.web_description}
+        city={fields.city}
+        country={fields.country}
+      />
+    {/if}
     <section class="panel" id="publishing">
       <h2>Publishing</h2>
       {#if missingAlt}

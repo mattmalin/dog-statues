@@ -92,6 +92,25 @@ test('capture three photos, reopen, edit, publish and hide with private media se
     .fill('Fixture only. <script>window.bad=true</script>');
   await page.getByLabel('Instagram caption').fill('PRIVATE CAPTION MARKER');
   await expect(page.getByText('Saved to Atlas', { exact: true })).toBeVisible();
+  await page.evaluate(() => {
+    Object.defineProperties(navigator, {
+      canShare: { configurable: true, value: () => true },
+      share: {
+        configurable: true,
+        value: async ({ files, text }: ShareData) => {
+          document.body.dataset.sharedFiles = files?.map((file) => file.name).join(',');
+          document.body.dataset.sharedCaption = text;
+        },
+      },
+    });
+  });
+  await page.getByRole('button', { name: 'Post to Instagram' }).click();
+  await page.getByRole('button', { name: 'Open share menu' }).click();
+  await expect(page.locator('body')).toHaveAttribute('data-shared-files', 'dog-statues-01.jpg');
+  await expect(page.locator('body')).toHaveAttribute(
+    'data-shared-caption',
+    'Fixture only. <script>window.bad=true</script>\n\nLocation: London, United Kingdom',
+  );
   const draftSlug = '/statues/fictional-qa-statue-' + editor.split('/').at(-1);
   expect(await (await request.get('/')).text()).not.toContain(`href="${draftSlug}"`);
   expect(await (await request.get('/rss.xml')).text()).not.toContain(draftSlug);
