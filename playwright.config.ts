@@ -1,4 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
+import { pathToFileURL } from 'node:url';
+import { resolve } from 'node:path';
 
 export default defineConfig({
   testDir: './tests',
@@ -22,6 +24,8 @@ export default defineConfig({
       DATABASE_URL: '',
       AZURE_STORAGE_CONNECTION_STRING: '',
       AZURE_STORAGE_ACCOUNT_URL: '',
+      INSTAGRAM_ACCESS_TOKEN: 'atlas-test-instagram-token',
+      NODE_OPTIONS: `--import=${pathToFileURL(resolve('tests/mock-instagram.mjs')).href}`,
     },
   },
 });

@@ -68,9 +68,11 @@ export async function listDrafts(inbox: boolean) {
   );
 }
 
-export async function getDraft(id: string) {
-  const db = database();
-  const [statue] = await db.all<Statue>(`SELECT ${adminColumns} FROM statues WHERE id=@id`, { id });
+export async function getDraft(id: string, db: Transaction = database(), lockRow = false) {
+  const [statue] = await db.all<Statue>(
+    `SELECT ${adminColumns} FROM statues ${lockRow ? writeLock : ''} WHERE id=@id`,
+    { id },
+  );
   if (!statue) error(404, 'Statue not found.');
   return {
     statue: { ...statue, photo_waiver: Boolean(statue.photo_waiver) },

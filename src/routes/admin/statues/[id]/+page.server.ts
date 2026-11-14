@@ -1,7 +1,14 @@
 import { getDraft } from '$lib/server/statues';
 import { uuid } from '$lib/server/input';
+import { instagramEnabled, instagramStatus } from '$lib/server/instagram';
 import type { PageServerLoad } from './$types';
-export const load: PageServerLoad = async ({ params, url }) => ({
-  ...(await getDraft(uuid(params.id))),
-  capture: url.searchParams.get('capture') === '1',
-});
+export const load: PageServerLoad = async ({ params, url }) => {
+  const id = uuid(params.id);
+  const enabled = instagramEnabled();
+  return {
+    ...(await getDraft(id)),
+    capture: url.searchParams.get('capture') === '1',
+    instagramEnabled: enabled,
+    instagramPublication: enabled ? await instagramStatus(id) : null,
+  };
+};

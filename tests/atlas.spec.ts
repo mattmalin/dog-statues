@@ -104,7 +104,7 @@ test('capture three photos, reopen, edit, publish and hide with private media se
       },
     });
   });
-  await page.getByRole('button', { name: 'Post to Instagram' }).click();
+  await page.getByRole('button', { name: 'Open in Instagram' }).click();
   await page.getByRole('button', { name: 'Open share menu' }).click();
   await expect(page.locator('body')).toHaveAttribute('data-shared-files', 'dog-statues-01.jpg');
   await expect(page.locator('body')).toHaveAttribute(
@@ -167,6 +167,73 @@ test('capture three photos, reopen, edit, publish and hide with private media se
     true,
   );
 });
+
+for (const lostResponse of [false, true]) {
+  test(
+    lostResponse
+      ? 'Instagram blocks duplicate attempts after a lost response'
+      : 'Instagram publishes an approved carousel only after owner confirmation',
+    async ({ page, request }) => {
+      await signIn(page);
+      const editor = await create(page);
+      const jpeg = await sharp({
+        create: { width: 80, height: 60, channels: 3, background: '#4a725e' },
+      })
+        .jpeg()
+        .toBuffer();
+      await page
+        .getByLabel('Choose photos')
+        .setInputFiles(['One.jpg', 'Two.jpg'].map((name) => photo(name, jpeg)));
+      await expect(page.getByText('Private photo', { exact: true })).toHaveCount(2);
+      await page.getByRole('button', { name: 'Save draft' }).click();
+      await expect(page.getByRole('heading', { name: 'Draft inbox' })).toBeVisible();
+      await page.goto(editor);
+      for (const name of ['One.jpg', 'Two.jpg']) {
+        const card = page.locator('.photo-card').filter({ hasText: name });
+        await card.getByRole('button', { name: 'Photo details' }).click();
+        await card.getByRole('checkbox').check();
+        await card.getByRole('button', { name: 'Save photo details' }).click();
+        await expect(card.getByText('Approved for website')).toBeVisible();
+      }
+      const api = '/api' + editor + '/instagram';
+      const description = lostResponse ? 'Simulate lost response' : 'A bronze dog.';
+      await page.getByLabel('Website description').fill(description);
+      await page.getByLabel('City', { exact: true }).fill('London');
+      await page.getByLabel('Country', { exact: true }).fill('United Kingdom');
+      await page.getByRole('button', { name: 'Publish to @dogstatues' }).click();
+      expect(await (await page.request.get(api)).json()).toBeNull();
+      expect((await request.post(api, { headers, data: {} })).status()).toBe(401);
+      await expect(page.getByLabel('Instagram post preview')).toHaveValue(
+        description + '\n\nLocation: London, United Kingdom',
+      );
+      await page.getByRole('button', { name: 'Confirm public Instagram post' }).click();
+      if (lostResponse) {
+        await expect(
+          page.getByText('Instagram may have published this post.', { exact: false }),
+        ).toBeVisible();
+        await page.reload();
+        await expect(page.getByRole('button', { name: 'Check publishing status' })).toBeVisible();
+        await expect(page.getByRole('button', { name: 'Publish to @dogstatues' })).toBeDisabled();
+        const draft = await (await page.request.get('/api' + editor)).json();
+        const retry = await page.request.post(api, {
+          headers,
+          data: {
+            photoIds: draft.photos.map((photo: { id: string }) => photo.id),
+            caption: description + '\n\nLocation: London, United Kingdom',
+            confirmPublic: true,
+          },
+        });
+        expect(retry.status()).toBe(409);
+        return;
+      }
+      const link = page.getByRole('link', { name: 'View Instagram post' });
+      await expect(link).toHaveAttribute('href', 'https://www.instagram.com/p/atlas-test/');
+      await page.reload();
+      await expect(link).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Publish to @dogstatues' })).toBeDisabled();
+    },
+  );
+}
 
 test('publishing without alt text requires confirmation and keeps a reminder until it is added', async ({
   page,

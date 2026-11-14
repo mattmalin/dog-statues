@@ -13,12 +13,21 @@
   import { message, RequestError, send, uploadId } from '$lib/client';
   import PhotoCard from './PhotoCard.svelte';
   import InstagramShare from './InstagramShare.svelte';
+  import type { InstagramPublication } from '$lib/instagram';
 
   let {
     statue,
     photos: startPhotos,
     capture,
-  }: { statue: Statue; photos: Photo[]; capture: boolean } = $props();
+    instagramEnabled,
+    instagramPublication,
+  }: {
+    statue: Statue;
+    photos: Photo[];
+    capture: boolean;
+    instagramEnabled: boolean;
+    instagramPublication: InstagramPublication | null;
+  } = $props();
   function fieldsFrom(row: Statue): Fields {
     return Object.fromEntries(
       Object.keys(initialFields).map((key) => [key, row[key as keyof Fields]]),
@@ -648,6 +657,9 @@
       <InstagramShare
         {api}
         {photos}
+        {instagramEnabled}
+        {instagramPublication}
+        {save}
         description={fields.web_description}
         city={fields.city}
         country={fields.country}

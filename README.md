@@ -22,6 +22,14 @@ Open [the owner sign-in](http://127.0.0.1:5173/admin) and use that passphrase. V
 
 For real photos and notes you want to keep outside Dropbox sync, set `ATLAS_DATA_DIR` in `.env` to a local directory outside your Dropbox folder.
 
+## Instagram publishing
+
+In the full owner editor, **Open in Instagram** prepares the approved photos for the device share menu. Instagram handles the account, audience and final share. The **Publish to @dogstatues** button previews the selected photos and caption, then publishes a public feed post when you confirm in the Atlas. Both use the website description followed by `Location: City, Country`.
+
+For a production release, apply `migrations/002_instagram.sql` via `npm.cmd run migrate` with the SQL migration principal. Ensure the Atlas runtime identity can select, insert, update and delete rows in `instagram_publications`. Deploy the new image and add the Dog Statues Unified Login token in **Azure Portal → dogatlas-app → Secrets** as `instagram-access-token`. In the container revision's environment variables, set `INSTAGRAM_ACCESS_TOKEN` to reference that secret. The token must have `instagram_basic` and `instagram_content_publish` for Dog Statues. Keep it out of Git and chat. The public domain must serve the expiring photo links at `/instagram-media/` so Meta can retrieve the JPEGs.
+
+For a local dry run, execute `npm.cmd test` with the Playwright Chromium browser installed, or set `$env:PLAYWRIGHT_CHANNEL='msedge'` to use installed Edge. The tests use fixture photos and simulated Meta responses, including an interrupted publishing request. If a live publishing result is uncertain, use **Check publishing status** and check the @dogstatues feed. The Atlas blocks repeat publishing for that statue until the outcome is known.
+
 ## Try the Android flow
 
 For a quick simulation, use Chrome DevTools device mode at 393 × 851 CSS pixels. To use an Android phone's camera and system photo picker, stop the loopback server, connect both devices to a trusted Wi-Fi network and run:

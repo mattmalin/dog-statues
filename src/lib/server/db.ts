@@ -18,9 +18,14 @@ function sqliteClient(): Client {
   db.exec('BEGIN IMMEDIATE');
   try {
     const row = db.prepare('PRAGMA user_version').get();
-    if (row?.user_version === 0) {
+    const version = Number(row?.user_version);
+    if (version === 0) {
       db.exec(readFileSync('migrations/sqlite/001_atlas.sql', 'utf8'));
       db.exec('PRAGMA user_version=1');
+    }
+    if (version < 2) {
+      db.exec(readFileSync('migrations/sqlite/002_instagram.sql', 'utf8'));
+      db.exec('PRAGMA user_version=2');
     }
     db.exec('COMMIT');
   } catch (cause) {

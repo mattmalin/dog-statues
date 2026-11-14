@@ -1,5 +1,13 @@
 <script lang="ts">
   import type { Photo } from '$lib/model';
+  import { message, send } from '$lib/client';
+  import {
+    instagramCaption,
+    instagramCaptionLimit,
+    instagramHandle,
+    instagramPhotoLimit,
+    type InstagramPublication,
+  } from '$lib/instagram';
 
   let {
     api,
@@ -7,14 +15,78 @@
     description,
     city,
     country,
-  }: { api: string; photos: Photo[]; description: string; city: string; country: string } =
-    $props();
+    instagramEnabled,
+    instagramPublication,
+    save,
+  }: {
+    api: string;
+    photos: Photo[];
+    description: string;
+    city: string;
+    country: string;
+    instagramEnabled: boolean;
+    instagramPublication: InstagramPublication | null;
+    save: () => Promise<boolean>;
+  } = $props();
 
   const approved = $derived(photos.filter((photo) => photo.rights_status === 'approved'));
-  const caption = $derived(`${description.trim()}\n\nLocation: ${city.trim()}, ${country.trim()}`);
-  const ready = $derived(
-    Boolean(approved.length && description.trim() && city.trim() && country.trim()),
+  const caption = $derived(instagramCaption(description, city, country));
+  const ready = $derived(Boolean(approved.length && caption));
+  let review = $state(false);
+  let selected = $state<string[]>([]);
+  let publishing = $state(false);
+  let publication = $state<InstagramPublication | null>(null);
+  let publicationError = $state('');
+  const status = $derived(publication ?? instagramPublication);
+  const selectedIds = $derived(
+    approved.filter((photo) => selected.includes(photo.id)).map((photo) => photo.id),
   );
+  const blocked = $derived(
+    status?.status === 'published' ||
+      status?.status === 'unknown' ||
+      status?.status === 'preparing',
+  );
+
+  function reviewPost() {
+    selected = approved.length <= instagramPhotoLimit ? approved.map((photo) => photo.id) : [];
+    publicationError = '';
+    review = true;
+  }
+
+  async function refreshStatus() {
+    const response = await fetch(api + '/instagram', { headers: { accept: 'application/json' } });
+    if (!response.ok) throw new Error('Status unavailable');
+    publication = await response.json();
+  }
+
+  async function checkStatus() {
+    publicationError = '';
+    try {
+      await refreshStatus();
+    } catch {
+      publicationError = 'Could not check the Instagram status. Try again.';
+    }
+  }
+
+  async function publishPost() {
+    if (publishing || blocked) return;
+    const payload = { photoIds: selectedIds, caption, confirmPublic: true };
+    publishing = true;
+    publicationError = '';
+    try {
+      if (!(await save())) {
+        publicationError = 'Save your changes before publishing to Instagram.';
+        return;
+      }
+      publication = await send<InstagramPublication>(api + '/instagram', 'POST', payload);
+      review = false;
+    } catch (cause) {
+      publicationError = message(cause);
+      await refreshStatus().catch(() => {});
+    } finally {
+      publishing = false;
+    }
+  }
   const photoUrl = (photo: Photo) => `${api}/photos/${photo.id}?size=web`;
   let open = $state(false);
   let busy = $state(false);
@@ -87,7 +159,7 @@
 <section class="panel" aria-labelledby="instagram-heading">
   <h2 id="instagram-heading">Instagram</h2>
   <button class="secondary" disabled={!ready || busy} onclick={prepare}>
-    {busy ? 'Preparing photos…' : 'Post to Instagram'}
+    {busy ? 'Preparing photos…' : 'Open in Instagram'}
   </button>
   {#if !ready}
     <p class="hint">Add a public description, city, country and at least one approved photo.</p>
@@ -116,4 +188,75 @@
     </details>
   {/if}
   <p class="hint" role="status">{notice}</p>
+  <button
+    class="primary"
+    disabled={!instagramEnabled || !ready || blocked || publishing}
+    onclick={reviewPost}
+  >
+    Publish to {instagramHandle}
+  </button>
+  {#if !instagramEnabled}
+    <p class="hint">Direct publishing needs an Instagram access token on the Atlas server.</p>
+  {/if}
+  {#if status?.status === 'published'}
+    <p role="status">
+      Published to {instagramHandle}. {#if status.permalink}<a href={status.permalink}
+          >View Instagram post</a
+        >{/if}
+    </p>
+  {:else if status?.status === 'unknown' || status?.status === 'preparing'}
+    <p role="status">
+      {status.status === 'unknown'
+        ? 'Instagram may have published this post. Check your feed and the publishing status.'
+        : 'Instagram post preparation is in progress.'}
+    </p>
+    <button class="secondary" disabled={publishing} onclick={checkStatus}
+      >Check publishing status</button
+    >
+  {/if}
+  {#if review && !blocked}
+    <h3>Review public post for {instagramHandle}</h3>
+    <p>This will publish a public feed post immediately.</p>
+    <label>Instagram post preview<textarea readonly rows="6" value={caption}></textarea></label>
+    {#if caption.length > instagramCaptionLimit}
+      <p class="error">
+        The caption including location must be {instagramCaptionLimit} characters or fewer. Shorten the
+        website description to continue.
+      </p>
+    {/if}
+    <fieldset disabled={publishing}>
+      <legend>Photos ({selectedIds.length}/{instagramPhotoLimit})</legend>
+      {#each approved as photo (photo.id)}
+        <label>
+          <input
+            type="checkbox"
+            value={photo.id}
+            bind:group={selected}
+            disabled={selectedIds.length >= instagramPhotoLimit && !selected.includes(photo.id)}
+          />
+          <img
+            src={photoUrl(photo)}
+            alt={photo.alt_text}
+            width="56"
+            height="56"
+            loading="lazy"
+            style="object-fit: cover"
+          />
+          {photo.original_filename}
+        </label>
+      {/each}
+    </fieldset>
+    <button class="secondary" disabled={publishing} onclick={() => (review = false)}>Cancel</button>
+    <button
+      class="primary"
+      disabled={publishing ||
+        !ready ||
+        !selectedIds.length ||
+        caption.length > instagramCaptionLimit}
+      onclick={publishPost}
+    >
+      {publishing ? 'Publishing…' : 'Confirm public Instagram post'}
+    </button>
+  {/if}
+  {#if publicationError}<p class="error" role="alert">{publicationError}</p>{/if}
 </section>
