@@ -18,7 +18,7 @@ The template proposes UK South, a Consumption app at zero minimum replicas, a Ge
 ## Approved rollout
 
 1. Apply the schema using `npm run migrate` with a migration principal. An example connection string for the Entra-authenticated migration runner is `Server=<host>;Database=atlas;Encrypt=true;Authentication=Active Directory Integrated`.
-2. As the SQL administrator, create the contained database user for the runtime managed identity and grant only `SELECT, INSERT, UPDATE, DELETE` on `dbo.statues` and `dbo.media_assets`. Blob data access is scoped by the template to the private container.
+2. As the SQL administrator, create the contained database user for the runtime managed identity and grant only `SELECT, INSERT, UPDATE, DELETE` on `dbo.statues`, `dbo.media_assets` and `dbo.instagram_publications`. Apply and verify the Instagram table grants before enabling the Instagram token. Blob data access is scoped by the template to the private container.
 3. Confirm the trusted boundary is configured, then expose external ingress. Verify immediately that Microsoft sign-in works for the allowlisted owner and that other tenants/accounts and forged identity headers get no owner access. Validate public browsing anonymously.
 4. Verify upload limits and cold starts, register the backup and spending alerts, and document recovery. Use a dedicated disposable resource group for development. When decommissioning an approved dev deployment, export its data, verify the resource group contains only disposable resources, then delete that group through Azure.
 

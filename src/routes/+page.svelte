@@ -1,24 +1,22 @@
 <script lang="ts">
+  import copy from '$lib/public-copy.json';
   import type { PageProps } from './$types';
   let { data }: PageProps = $props();
 </script>
 
 <svelte:head>
-  <title>Dog Statue Atlas</title>
-  <link rel="alternate" type="application/rss+xml" title="Dog Statue Atlas" href="/rss.xml" />
-  <meta
-    name="description"
-    content="A field guide to dog statues and memorials, starting in London."
-  />
+  <title>{copy.site.name}</title>
+  <link rel="alternate" type="application/rss+xml" title={copy.site.name} href="/rss.xml" />
+  <meta name="description" content={copy.home.metadataDescription} />
 </svelte:head>
 <main id="main" class="shell main">
   <section class="intro">
-    <h1>Dogs worth looking up to.</h1>
-    <p class="lede">A field guide to dog statues and memorials, starting in London.</p>
+    <h1>{copy.home.heading}</h1>
+    <p class="lede">{copy.home.introduction}</p>
   </section>
   <section class="directory" aria-labelledby="directory-heading">
-    <h2 id="directory-heading">Explore the statues</h2>
-    <p><a href="/rss.xml">Subscribe via RSS</a></p>
+    <h2 id="directory-heading">{copy.home.directory}</h2>
+    <p><a href="/rss.xml">{copy.home.subscribe}</a></p>
     {#if data.statues.length}
       <ul>
         {#each data.statues as statue (statue.slug)}
@@ -28,7 +26,7 @@
               <img
                 class="thumbnail"
                 src={'/media/' + statue.photo_id + '?size=thumb'}
-                alt={statue.alt_text || 'Photo of ' + statue.title}
+                alt={statue.alt_text || copy.site.photoAltPrefix + statue.title}
                 width="480"
                 height="300"
                 loading="lazy"
@@ -44,7 +42,7 @@
         {/each}
       </ul>
     {:else}
-      <p class="lede">No statues have been published yet.</p>
+      <p class="lede">{copy.home.empty}</p>
     {/if}
   </section>
 </main>

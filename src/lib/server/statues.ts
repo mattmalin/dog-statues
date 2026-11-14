@@ -1,3 +1,4 @@
+import copy from '$lib/public-copy.json';
 import { error } from '@sveltejs/kit';
 import {
   initialFields,
@@ -302,7 +303,7 @@ export async function getPublicStatue(slug: string) {
       latitude,longitude,cover_media_id FROM statues WHERE slug=@slug AND web_status='published'`,
     { slug },
   );
-  if (!statue) error(404, 'Statue not found.');
+  if (!statue) error(404, copy.statue.unavailable);
   const photos = await db.all<PublicPhoto>(
     `SELECT m.id,m.alt_text,m.credit,m.width,m.height FROM media_assets m JOIN statues s ON s.id=m.statue_id
       WHERE s.slug=@slug AND s.web_status='published' AND m.rights_status='approved'

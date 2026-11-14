@@ -1,3 +1,4 @@
+import copy from '$lib/public-copy.json';
 import { listFeedEntries } from '$lib/server/statues';
 import type { RequestHandler } from './$types';
 
@@ -36,9 +37,9 @@ export const GET: RequestHandler = async ({ url }) => {
     `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Dog Statue Atlas</title>
+    <title>${escapeXml(copy.site.name)}</title>
     <link>${escapeXml(new URL('/', url).href)}</link>
-    <description>Published dog statues and memorials from the Dog Statue Atlas.</description>
+    <description>${escapeXml(copy.rss.description)}</description>
     <atom:link href="${escapeXml(new URL('/rss.xml', url).href)}" rel="self" type="application/rss+xml" />
     ${items.join('\n')}
   </channel>

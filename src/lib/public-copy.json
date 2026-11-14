@@ -1,0 +1,32 @@
+{
+  "site": {
+    "name": "Dog Statue Atlas",
+    "skip": "Skip to content",
+    "owner": "Owner area",
+    "photoAltPrefix": "Photo of "
+  },
+  "home": {
+    "heading": "Dogs worth looking up to.",
+    "introduction": "A field guide to dog statues and memorials, starting in London.",
+    "metadataDescription": "A field guide to dog statues and memorials, starting in London.",
+    "directory": "Explore the statues",
+    "subscribe": "Subscribe via RSS",
+    "empty": "No statues have been published yet."
+  },
+  "statue": {
+    "home": "Atlas home",
+    "record": "Statue record",
+    "location": "Find the statue",
+    "maps": "Open in maps",
+    "gallery": "Gallery",
+    "unavailable": "Statue not found."
+  },
+  "error": {
+    "missing": "This page is unavailable",
+    "other": "Something went wrong",
+    "home": "Back to the Atlas"
+  },
+  "rss": {
+    "description": "Published dog statues and memorials from the Dog Statue Atlas."
+  }
+}

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import copy from '$lib/public-copy.json';
   import { googleMapsUrl } from '$lib/maps';
   import type { PageProps } from './$types';
   let { data }: PageProps = $props();
@@ -14,22 +15,22 @@
 </script>
 
 <svelte:head>
-  <title>{data.statue.title} · Dog Statue Atlas</title>
+  <title>{data.statue.title} · {copy.site.name}</title>
   {#if data.statue.short_summary}<meta
       name="description"
       content={data.statue.short_summary}
     />{/if}
 </svelte:head>
 <main id="main" class="shell main public-record">
-  <a class="back" href="/">← Atlas home</a>
-  <p class="eyebrow">{place || 'Statue record'}</p>
+  <a class="back" href="/">← {copy.statue.home}</a>
+  <p class="eyebrow">{place || copy.statue.record}</p>
   <h1>{data.statue.title}</h1>
   {#if data.statue.short_summary}<p class="lede">{data.statue.short_summary}</p>{/if}
   {#if data.cover}
     <figure class="cover">
       <img
         src={'/media/' + data.cover.id}
-        alt={data.cover.alt_text || 'Photo of ' + data.statue.title}
+        alt={data.cover.alt_text || copy.site.photoAltPrefix + data.statue.title}
         width={data.cover.width}
         height={data.cover.height}
       />
@@ -39,7 +40,7 @@
   <div class="story">{data.statue.web_description}</div>
   {#if location || pin}
     <section class="panel public-location">
-      <h2>Find the statue</h2>
+      <h2>{copy.statue.location}</h2>
       {#if location}<p>
           {[data.statue.address, place, data.statue.postal_code].filter(Boolean).join(', ') ||
             location}
@@ -47,19 +48,19 @@
       <a
         href={pin ??
           'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(location)}
-        >Open in maps ↗</a
+        >{copy.statue.maps} ↗</a
       >
     </section>
   {/if}
   {#if data.photos.length > 1}
     <section>
-      <h2>Gallery</h2>
+      <h2>{copy.statue.gallery}</h2>
       <div class="gallery">
         {#each data.photos.filter((photo) => photo.id !== data.cover?.id) as photo (photo.id)}
           <figure>
             <img
               src={'/media/' + photo.id}
-              alt={photo.alt_text || 'Photo of ' + data.statue.title}
+              alt={photo.alt_text || copy.site.photoAltPrefix + data.statue.title}
               width={photo.width}
               height={photo.height}
               loading="lazy"
