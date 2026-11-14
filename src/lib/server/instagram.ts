@@ -88,15 +88,46 @@ export async function instagramImage(statueId: string, photoId: string, url: URL
 }
 
 async function graph(path: string, fetcher: typeof fetch, fields?: Record<string, string>) {
-  const response = await fetcher(`${graphOrigin}/${version}/${path}`, {
-    method: fields ? 'POST' : 'GET',
-    headers: { Authorization: `Bearer ${env.INSTAGRAM_ACCESS_TOKEN!.trim()}` },
-    body: fields ? new URLSearchParams(fields) : undefined,
-    redirect: 'error',
-    signal: AbortSignal.timeout(10_000),
-  });
-  const data = await response.json();
+  const operation = path.endsWith('/media_publish')
+    ? 'publish'
+    : path.endsWith('/media')
+      ? 'create container'
+      : path.includes('status_code')
+        ? 'check container'
+        : path.includes('permalink')
+          ? 'read permalink'
+          : 'verify account';
+  let response: Response;
+  try {
+    response = await fetcher(`${graphOrigin}/${version}/${path}`, {
+      method: fields ? 'POST' : 'GET',
+      headers: { Authorization: `Bearer ${env.INSTAGRAM_ACCESS_TOKEN!.trim()}` },
+      body: fields ? new URLSearchParams(fields) : undefined,
+      redirect: 'error',
+      signal: AbortSignal.timeout(20_000),
+    });
+  } catch (cause) {
+    console.error('Instagram network request failed', {
+      operation,
+      type: cause instanceof Error ? cause.name : 'Unknown',
+    });
+    error(502, `Could not reach Instagram to ${operation}. Try again in a moment.`);
+  }
+  const data = await response.json().catch(() => null);
+  if (!data || typeof data !== 'object') {
+    console.error('Instagram returned an unreadable response', {
+      operation,
+      status: response.status,
+    });
+    error(502, `Instagram returned an unreadable response while trying to ${operation}.`);
+  }
   if (!response.ok || data.error) {
+    console.error('Instagram rejected a request', {
+      operation,
+      status: response.status,
+      code: Number(data.error?.code) || undefined,
+      subcode: Number(data.error?.error_subcode) || undefined,
+    });
     if (data.error?.code === 190)
       error(502, 'Instagram rejected the token. Update the Atlas Instagram secret.');
     if (data.error?.code === 10 || data.error?.code === 200)
@@ -160,6 +191,7 @@ export async function publishInstagram(
   });
 
   let sending = false;
+  let stage = 'account verification';
   try {
     const account = await graph(`${accountId}?fields=id,username`, fetcher);
     if (account.id !== accountId || `@${account.username}` !== instagramHandle) {
@@ -167,8 +199,15 @@ export async function publishInstagram(
     }
     const expires = Date.now() + preparationWindow;
     const media = `${accountId}/media`;
-    const create = async (fields: Record<string, string>) =>
-      metaId.parse((await graph(media, fetcher, fields)).id);
+    const create = async (fields: Record<string, string>) => {
+      const result = metaId.safeParse((await graph(media, fetcher, fields)).id);
+      if (!result.success) {
+        console.error('Instagram response omitted a valid container ID', { stage });
+        error(502, 'Instagram did not return a valid photo or carousel ID.');
+      }
+      return result.data;
+    };
+    stage = 'photo container creation';
     const children = await Promise.all(
       chosen.map((photo) =>
         create({
@@ -178,7 +217,9 @@ export async function publishInstagram(
         }),
       ),
     );
+    stage = 'photo processing';
     await Promise.all(children.map((child) => waitForContainer(child, fetcher)));
+    stage = 'carousel preparation';
     const container =
       children.length === 1
         ? children[0]
@@ -188,6 +229,7 @@ export async function publishInstagram(
             caption: input.caption,
           });
     if (children.length > 1) await waitForContainer(container, fetcher);
+    stage = 'recording publishing attempt';
     await db.write(async (tx) => {
       await getDraft(id, tx, true);
       if ((await publication(tx, id))?.attempt_id !== attempt)
@@ -229,7 +271,11 @@ export async function publishInstagram(
       { id, attempt, now: timestamp() },
     );
     if (cause && typeof cause === 'object' && 'status' in cause) throw cause;
-    error(502, 'Could not prepare the Instagram post. Try again.');
+    console.error('Instagram preparation failed', {
+      stage,
+      type: cause instanceof Error ? cause.name : 'Unknown',
+    });
+    error(502, `Instagram preparation failed during ${stage}. Try again.`);
   }
 }
 
