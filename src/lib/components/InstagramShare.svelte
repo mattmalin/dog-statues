@@ -1,11 +1,15 @@
 <script lang="ts">
   import type { Photo } from '$lib/model';
   import { message, send } from '$lib/client';
+  import InstagramCrop from './InstagramCrop.svelte';
   import {
     instagramCaption,
     instagramCaptionLimit,
     instagramHandle,
     instagramPhotoLimit,
+    defaultCrop,
+    type InstagramDraft,
+    type SquareCrop,
     type InstagramPublication,
   } from '$lib/instagram';
 
@@ -17,6 +21,7 @@
     country,
     instagramEnabled,
     instagramPublication,
+    instagramDraft,
     save,
   }: {
     api: string;
@@ -26,6 +31,7 @@
     country: string;
     instagramEnabled: boolean;
     instagramPublication: InstagramPublication | null;
+    instagramDraft: InstagramDraft | null;
     save: () => Promise<boolean>;
   } = $props();
 
@@ -34,6 +40,11 @@
   const ready = $derived(Boolean(approved.length && caption));
   let review = $state(false);
   let selected = $state<string[]>([]);
+  let crops = $state<Record<string, SquareCrop>>({});
+  let draft = $state<InstagramDraft | undefined>();
+  const savedDraft = $derived(draft ?? instagramDraft);
+  let savingDraft = $state(false);
+  let draftNotice = $state('');
   let publishing = $state(false);
   let publication = $state<InstagramPublication | null>(null);
   let publicationError = $state('');
@@ -48,9 +59,31 @@
   );
 
   function reviewPost() {
-    selected = approved.length <= instagramPhotoLimit ? approved.map((photo) => photo.id) : [];
+    selected = savedDraft
+      ? [...savedDraft.photoIds]
+      : approved.length <= instagramPhotoLimit
+        ? approved.map((photo) => photo.id)
+        : [];
+    crops = { ...savedDraft?.crops };
     publicationError = '';
     review = true;
+  }
+
+  async function saveDraft() {
+    savingDraft = true;
+    publicationError = '';
+    draftNotice = '';
+    try {
+      draft = await send<InstagramDraft>(api + '/instagram', 'PUT', {
+        photoIds: selectedIds,
+        crops,
+      });
+      draftNotice = 'Instagram draft saved.';
+    } catch (cause) {
+      publicationError = message(cause);
+    } finally {
+      savingDraft = false;
+    }
   }
 
   async function refreshStatus() {
@@ -70,7 +103,7 @@
 
   async function publishPost() {
     if (publishing || blocked) return;
-    const payload = { photoIds: selectedIds, caption, confirmPublic: true };
+    const payload = { photoIds: selectedIds, crops, caption, confirmPublic: true };
     publishing = true;
     publicationError = '';
     try {
@@ -190,10 +223,14 @@
   <p class="hint" role="status">{notice}</p>
   <button
     class="primary"
-    disabled={!instagramEnabled || !ready || blocked || publishing}
+    disabled={!approved.length || blocked || publishing || savingDraft}
     onclick={reviewPost}
   >
-    Publish to {instagramHandle}
+    {savedDraft
+      ? 'Resume Instagram draft'
+      : ready && instagramEnabled
+        ? 'Publish to ' + instagramHandle
+        : 'Prepare Instagram draft'}
   </button>
   {#if !instagramEnabled}
     <p class="hint">Direct publishing needs an Instagram access token on the Atlas server.</p>
@@ -224,7 +261,7 @@
         website description to continue.
       </p>
     {/if}
-    <fieldset disabled={publishing}>
+    <fieldset disabled={publishing || savingDraft}>
       <legend>Photos ({selectedIds.length}/{instagramPhotoLimit})</legend>
       {#each approved as photo (photo.id)}
         <label>
@@ -244,12 +281,30 @@
           />
           {photo.original_filename}
         </label>
+        {#if selectedIds.includes(photo.id)}
+          <details>
+            <summary>Square crop for {photo.original_filename}</summary>
+            <InstagramCrop
+              {photo}
+              src={photoUrl(photo)}
+              crop={crops[photo.id] ?? defaultCrop}
+              onchange={(crop) => (crops[photo.id] = crop)}
+            />
+          </details>
+        {/if}
       {/each}
     </fieldset>
-    <button class="secondary" disabled={publishing} onclick={() => (review = false)}>Cancel</button>
+    <button class="secondary" disabled={publishing || savingDraft} onclick={() => (review = false)}
+      >Cancel</button
+    >
+    <button class="secondary" disabled={publishing || savingDraft} onclick={saveDraft}>
+      {savingDraft ? 'Saving…' : 'Save Instagram draft'}
+    </button>
     <button
       class="primary"
       disabled={publishing ||
+        savingDraft ||
+        !instagramEnabled ||
         !ready ||
         !selectedIds.length ||
         caption.length > instagramCaptionLimit}
@@ -258,5 +313,6 @@
       {publishing ? 'Publishing…' : 'Confirm public Instagram post'}
     </button>
   {/if}
+  {#if draftNotice}<p role="status">{draftNotice}</p>{/if}
   {#if publicationError}<p class="error" role="alert">{publicationError}</p>{/if}
 </section>

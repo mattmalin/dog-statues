@@ -13,7 +13,7 @@
   import { message, RequestError, send, uploadId } from '$lib/client';
   import PhotoCard from './PhotoCard.svelte';
   import InstagramShare from './InstagramShare.svelte';
-  import type { InstagramPublication } from '$lib/instagram';
+  import type { InstagramDraft, InstagramPublication } from '$lib/instagram';
 
   let {
     statue,
@@ -21,12 +21,14 @@
     capture,
     instagramEnabled,
     instagramPublication,
+    instagramDraft,
   }: {
     statue: Statue;
     photos: Photo[];
     capture: boolean;
     instagramEnabled: boolean;
     instagramPublication: InstagramPublication | null;
+    instagramDraft: InstagramDraft | null;
   } = $props();
   function fieldsFrom(row: Statue): Fields {
     return Object.fromEntries(
@@ -719,6 +721,7 @@
         {photos}
         {instagramEnabled}
         {instagramPublication}
+        {instagramDraft}
         {save}
         description={fields.web_description}
         city={fields.city}

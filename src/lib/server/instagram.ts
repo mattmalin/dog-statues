@@ -5,6 +5,12 @@ import { error } from '@sveltejs/kit';
 import { z } from 'zod';
 import {
   instagramCaption,
+  instagramDraftSchema,
+  cropBounds,
+  defaultCrop,
+  squareCropSchema,
+  type InstagramDraft,
+  type SquareCrop,
   instagramHandle,
   type InstagramPublication,
   type instagramRequest,
@@ -48,25 +54,63 @@ export async function instagramStatus(id: string): Promise<InstagramPublication 
   };
 }
 
-function signature(statueId: string, photoId: string, expires: number) {
+export async function readInstagramDraft(id: string) {
+  const [row] = await database().all<{ instagram_draft: string | null }>(
+    'SELECT instagram_draft FROM statues WHERE id=@id',
+    { id },
+  );
+  return row?.instagram_draft ? instagramDraftSchema.parse(JSON.parse(row.instagram_draft)) : null;
+}
+
+export async function saveInstagramDraft(id: string, draft: InstagramDraft) {
+  return database().write(async (tx) => {
+    const { photos } = await getDraft(id, tx, true);
+    const approved = new Set(
+      photos.filter((photo) => photo.rights_status === 'approved').map((photo) => photo.id),
+    );
+    const saved = {
+      photoIds: [...new Set(draft.photoIds)].filter((photo) => approved.has(photo)),
+      crops: Object.fromEntries(
+        Object.entries(draft.crops).filter(([photo]) => approved.has(photo)),
+      ),
+    };
+    await tx.run('UPDATE statues SET instagram_draft=@draft WHERE id=@id', {
+      id,
+      draft: JSON.stringify(saved),
+    });
+    return saved;
+  });
+}
+
+function signature(statueId: string, photoId: string, expires: number, crop: string) {
   return createHmac('sha256', env.INSTAGRAM_ACCESS_TOKEN!)
-    .update(`instagram-image:${statueId}:${photoId}:${expires}`)
+    .update(`instagram-image:${statueId}:${photoId}:${expires}${crop ? ':' + crop : ''}`)
     .digest('hex');
 }
 
-function imageUrl(statueId: string, photoId: string, expires: number) {
-  return `${publicOrigin}/instagram-media/${statueId}/${photoId}?expires=${expires}&signature=${signature(statueId, photoId, expires)}`;
+function imageUrl(statueId: string, photoId: string, expires: number, crop: SquareCrop) {
+  const value = [crop.x, crop.y, crop.zoom].join(',');
+  const query = new URLSearchParams({
+    expires: String(expires),
+    crop: value,
+    signature: signature(statueId, photoId, expires, value),
+  });
+  return `${publicOrigin}/instagram-media/${statueId}/${photoId}?${query}`;
 }
 
 export async function instagramImage(statueId: string, photoId: string, url: URL) {
   const expires = Number(url.searchParams.get('expires'));
   const supplied = url.searchParams.get('signature') ?? '';
+  const value = url.searchParams.get('crop') ?? '';
   if (
     !instagramEnabled() ||
     !Number.isSafeInteger(expires) ||
     expires <= Date.now() ||
     !/^[a-f0-9]{64}$/.test(supplied) ||
-    !timingSafeEqual(Buffer.from(supplied), Buffer.from(signature(statueId, photoId, expires)))
+    !timingSafeEqual(
+      Buffer.from(supplied),
+      Buffer.from(signature(statueId, photoId, expires, value)),
+    )
   ) {
     error(404, 'Photo not found.');
   }
@@ -74,8 +118,15 @@ export async function instagramImage(statueId: string, photoId: string, url: URL
     error(404, 'Photo not found.');
   const { readPhoto } = await import('./storage');
   const { default: sharp } = await import('sharp');
-  const jpeg = await sharp(await readPhoto(statueId, photoId, 'web'))
-    .resize(1080, 1080, { fit: 'contain', background: '#ffffff' })
+  const image = sharp(await readPhoto(statueId, photoId, 'web'));
+  const [x, y, zoom] = value.split(',').map(Number);
+  const crop = value ? squareCropSchema.parse({ x, y, zoom }) : null;
+  const { width, height } = await image.metadata();
+  const jpeg = await (
+    crop
+      ? image.extract(cropBounds(width, height, crop)).resize(1080, 1080)
+      : image.resize(1080, 1080, { fit: 'contain', background: '#ffffff' })
+  )
     .jpeg({ quality: 88 })
     .toBuffer();
   return new Response(new Uint8Array(jpeg), {
@@ -211,7 +262,7 @@ export async function publishInstagram(
     const children = await Promise.all(
       chosen.map((photo) =>
         create({
-          image_url: imageUrl(id, photo.id, expires),
+          image_url: imageUrl(id, photo.id, expires, input.crops?.[photo.id] ?? defaultCrop),
           ...(chosen.length > 1 ? { is_carousel_item: 'true' } : { caption: input.caption }),
           ...(photo.alt_text ? { alt_text: photo.alt_text } : {}),
         }),

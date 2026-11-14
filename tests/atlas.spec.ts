@@ -213,6 +213,19 @@ for (const lostResponse of [false, true]) {
       await expect(page.getByLabel('Instagram post preview')).toHaveValue(
         description + '\n\nLocation: London, United Kingdom',
       );
+      if (!lostResponse) {
+        await page.getByText('Square crop for One.jpg').click();
+        await page.getByRole('slider', { name: 'Zoom', exact: true }).fill('2');
+        await page.getByRole('slider', { name: 'Horizontal position' }).fill('75');
+        await page.getByRole('button', { name: 'Save Instagram draft' }).click();
+        await expect(page.getByText('Instagram draft saved.')).toBeVisible();
+        expect(await (await page.request.get(api)).json()).toBeNull();
+        await page.reload();
+        await page.getByRole('button', { name: 'Resume Instagram draft' }).click();
+        await page.getByText('Square crop for One.jpg').click();
+        await expect(page.getByRole('slider', { name: 'Zoom', exact: true })).toHaveValue('2');
+        await expect(page.getByRole('slider', { name: 'Horizontal position' })).toHaveValue('75');
+      }
       await page.getByRole('button', { name: 'Confirm public Instagram post' }).click();
       if (lostResponse) {
         await expect(
@@ -237,7 +250,7 @@ for (const lostResponse of [false, true]) {
       await expect(link).toHaveAttribute('href', 'https://www.instagram.com/p/atlas-test/');
       await page.reload();
       await expect(link).toBeVisible();
-      await expect(page.getByRole('button', { name: 'Publish to @dogstatues' })).toBeDisabled();
+      await expect(page.getByRole('button', { name: 'Resume Instagram draft' })).toBeDisabled();
     },
   );
 }

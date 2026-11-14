@@ -32,6 +32,9 @@ globalThis.fetch = async (input, options) => {
       const image = await realFetch('http://127.0.0.1:4177' + photo.pathname + photo.search);
       if (!image.ok || image.headers.get('content-type') !== 'image/jpeg')
         return Response.json({}, { status: 422 });
+      const { width, height } = await sharp(Buffer.from(await image.arrayBuffer())).metadata();
+      if (width !== 1080 || height !== 1080 || !photo.searchParams.has('crop'))
+        return Response.json({}, { status: 422 });
     }
     const id = String(nextId++);
     containers.add(id);
@@ -48,3 +51,4 @@ globalThis.fetch = async (input, options) => {
     return Response.json({ status_code: 'FINISHED' });
   return Response.json({}, { status: 404 });
 };
+import sharp from 'sharp';
