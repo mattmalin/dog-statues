@@ -11,4 +11,8 @@
     aria-current={page.url.pathname === '/admin/statues' ? 'page' : undefined}
     href="/admin/statues">All statues</a
   >
+  <a
+    aria-current={page.url.pathname.startsWith('/admin/potential') ? 'page' : undefined}
+    href="/admin/potential">Potential future dog statues</a
+  >
 </nav>

@@ -68,6 +68,12 @@ Use your own test photos or clearly fictitious fixtures. Shut down the LAN serve
 
 ## Automated checks
 
+The owner area's **Potential future dog statues** catalogue stores research leads separately from statue posts. It supports searching, a London filter, visit statuses, editable notes and sources, Google Maps links and coordinate import. Open **Researched suggestions → Add researched suggestions** to import the curated research, including all 47 supplied London CSV records with seven initial duplicates merged. The 55 entries include one archived historical record; select **All** to see it. Re-importing preserves your edits. See [research/README.md](research/README.md) for provenance and unresolved details.
+
+The catalogue uses explicit **Save potential statue** actions. It never publishes a record. SQLite adds migration 007 automatically; SQL deployments must run `npm.cmd run migrate` before releasing this feature. Azure's existing whole-database backups/BACPAC exports include `dog_statues.potential_statues`; local backups of the complete data directory include the SQLite table. After a recovery, check a research note, a pin and an archived entry as well as the statue posts.
+
+For a focused catalogue check, set `$env:PLAYWRIGHT_CHANNEL = 'msedge'` if using installed Edge, then run `npx.cmd playwright test tests/potential.spec.ts --workers=1`. This uses the isolated test database, not your configured production database.
+
 ```powershell
 npx.cmd playwright install chromium
 npm.cmd run check

@@ -66,6 +66,10 @@ function sqliteClient(): Client {
       }
       db.exec('PRAGMA user_version=6');
     }
+    if (version < 7) {
+      db.exec(readFileSync('migrations/sqlite/007_potential_statues.sql', 'utf8'));
+      db.exec('PRAGMA user_version=7');
+    }
     db.exec('COMMIT');
   } catch (cause) {
     db.exec('ROLLBACK');

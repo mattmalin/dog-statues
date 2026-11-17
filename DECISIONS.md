@@ -1,5 +1,8 @@
 # Architecture decisions
 
+- **Potential statues are independent private records.** Migration 007 introduces `dog_statues.potential_statues` (SQLite equivalent locally), with no relationship to publication or Instagram state. Owner routes reuse the existing authentication, same-origin mutation checks and Maps resolver. Explicit saves use revision checks to protect against stale edits; archive retains research without making it an active visit lead. This shares existing database backups and adds no Azure service.
+- **Curated research imports preserve provenance.** Stable IDs merge seven initial London overlaps with the owner's 47-row CSV and make repeated imports safe without overwriting owner edits. The original CSV and numbered sourced story findings remain in `research/`; only the server imports the combined dataset. Original pin precision and uncertain/current-location caveats remain in private notes, and supplied coordinates are never marked independently checked. Separate installed works remain separate even where subjects or addresses match. Research does not become public copy automatically.
+
 - **Private publication snapshots.** Publishing stores only the public fields and approved photo metadata in the statue row. Public pages, the directory, RSS and photo access use that saved version. Preview uses the same page component with authenticated photo URLs. Private research and drafts stay in the existing statue record. The migration captures current published content before the app changes its read path.
 - **Sources stay private.** The owner requested private research sources for this release. Source notes, checked dates, sculptor, unveiling details and plaque transcriptions are available in the editor and excluded from public snapshots.
 

@@ -1,0 +1,11 @@
+# Private potential-statue research
+
+Researched on 17 November 2026. These files support private owner research; they are not approved public website or Instagram wording.
+
+`london-47-original.csv` is an unchanged copy of the owner's CSV. `london-stories.json` records the sourced story findings for each numbered CSV row. `src/lib/server/potential-suggestions.json` combines those 47 rows with the initial worldwide research, preserving original names, addresses, Maps URLs, coordinate values, notes and provenance. Seven matching London records reuse the original suggestion IDs: Brown Dog, Trump, Blind Beggar, Animals in War, Grosvenor's dogs, Dog in a Kennel and Paparazzi Dogs. The result is 55 entries, including one archived historical entry. Separate installations of the same heraldic subject and separate miniatures at one address are retained.
+
+Story links are stored in each record's notes and primary source field. The artist's individual narratives for the Little Things miniatures are fictional scenes involving Dogman and Rabbitwoman, not biographies of real dogs. The installed objects and exact pins still need checking. A Little Recycle has a sourced trail-level story; an individual narrative was not established. Gunnersbury's maker and date remain unresolved. Giro is a grave marker, not a dog statue. Geoffrey Barkington is archived because the memorial is listed as lost. Wild Kingston was advertised until September 2026, so Rise Up Rhino's continued presence needs confirmation. Museum display and admission arrangements should be checked before visiting.
+
+After applying migration 007 and deploying the application, open **Owner area → Potential future dog statues → Researched suggestions → Add researched suggestions**. This inserts the records into the private catalogue. Repeating the import adds only missing stable IDs and preserves edits and archive choices. Choose **All** in the status filter to include archived records. This is a curated starter dataset, not a general CSV upload feature.
+
+Edit notes, source links, map links and coordinates in the private editor and save explicitly. Search includes the original CSV IDs and notes. None of these records creates a public statue page or Instagram post. Write and approve any eventual public story separately in the main statue editor.
