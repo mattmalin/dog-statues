@@ -5,16 +5,16 @@
     BlinkMacSystemFont,
     'Segoe UI',
     sans-serif;
-  color: #222b24;
-  background: #f6f3eb;
+  color: #282036;
+  background: #f6f1fc;
   color-scheme: light;
-  --paper: #fffdf7;
-  --text: #222b24;
-  --muted: #505d52;
-  --green: #184e43;
-  --green-dark: #10382f;
-  --line: #cfcfc1;
-  --wash: #e5eee3;
+  --paper: #fdfbff;
+  --text: #282036;
+  --muted: #5d506e;
+  --accent: #65369a;
+  --accent-dark: #492369;
+  --line: #d9cfe4;
+  --wash: #eee4fa;
   --red: #9a321e;
   font-synthesis: none;
 }
@@ -26,11 +26,11 @@ body {
   min-width: 0;
 }
 a {
-  color: var(--green);
+  color: var(--accent);
   text-underline-offset: 0.2em;
 }
 :focus-visible {
-  outline: 3px solid #a04a18;
+  outline: 3px solid #793eb4;
   outline-offset: 3px;
 }
 button,
@@ -47,11 +47,11 @@ button,
   justify-content: center;
   gap: 0.5rem;
   min-height: 48px;
-  border: 1px solid var(--green);
+  border: 1px solid var(--accent);
   border-radius: 0.7rem;
   padding: 0.66rem 1rem;
   font-weight: 680;
-  background: var(--green);
+  background: var(--accent);
   color: white;
   text-decoration: none;
   cursor: pointer;
@@ -59,16 +59,16 @@ button,
 button:hover,
 .button:hover,
 .file-button:hover {
-  background: var(--green-dark);
+  background: var(--accent-dark);
 }
 button:disabled {
   opacity: 0.57;
   cursor: default;
 }
 .secondary {
-  color: var(--green);
+  color: var(--accent);
   background: var(--paper);
-  border-color: #aab7a7;
+  border-color: #b6a5c7;
 }
 .secondary:hover {
   background: var(--wash);
@@ -76,7 +76,7 @@ button:disabled {
 .text-button {
   border-color: transparent;
   background: transparent;
-  color: var(--green);
+  color: var(--accent);
   text-decoration: underline;
 }
 .text-button:hover {
@@ -158,7 +158,7 @@ p {
   top: 0.4rem;
 }
 .eyebrow {
-  color: var(--green);
+  color: var(--accent);
   text-transform: uppercase;
   letter-spacing: 0.13em;
   font-weight: 800;
@@ -181,7 +181,7 @@ p {
 .intro {
   padding: clamp(1.4rem, 6vw, 4rem);
   background: var(--wash);
-  border: 1px solid #cad8c6;
+  border: 1px solid #ddcceb;
   border-radius: 1.4rem;
 }
 .intro .button {
@@ -226,15 +226,15 @@ p {
 .badge {
   font-size: 0.78rem;
   font-weight: 740;
-  background: #eeeadd;
-  color: #424638;
+  background: #eee6f5;
+  color: #4e3c60;
   border-radius: 2rem;
   padding: 0.34rem 0.65rem;
   flex-shrink: 0;
 }
 .badge.live {
   background: var(--wash);
-  color: var(--green-dark);
+  color: var(--accent-dark);
 }
 .empty,
 .panel,
@@ -329,7 +329,7 @@ textarea,
 select {
   display: block;
   width: 100%;
-  border: 1px solid #9ea99d;
+  border: 1px solid #a797b7;
   border-radius: 0.56rem;
   min-height: 48px;
   padding: 0.72rem;
@@ -362,7 +362,7 @@ input[type='checkbox'] {
   flex: 0 0 20px;
   width: 20px;
   height: 20px;
-  accent-color: var(--green);
+  accent-color: var(--accent);
 }
 .capture-actions {
   display: grid;
@@ -375,7 +375,7 @@ input[type='checkbox'] {
   padding-inline: 0.35rem;
 }
 .file-button:focus-within {
-  outline: 3px solid #a04a18;
+  outline: 3px solid #793eb4;
   outline-offset: 3px;
 }
 .file-button input {
@@ -447,7 +447,7 @@ progress {
   display: block;
   width: 100%;
   margin-top: 0.4rem;
-  accent-color: var(--green);
+  accent-color: var(--accent);
 }
 .savebar {
   position: fixed;

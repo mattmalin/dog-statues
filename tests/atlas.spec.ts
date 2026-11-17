@@ -40,6 +40,39 @@ test('anonymous requests and forged platform headers cannot reach owner routes',
   expect((await request.get('/statues/unpublished-test')).status()).toBe(404);
 });
 
+test('approve and credit all photos from the statue editor', async ({ page, request }) => {
+  await signIn(page);
+  const editor = await create(page);
+  const jpeg = await sharp({
+    create: { width: 80, height: 60, channels: 3, background: '#65369a' },
+  })
+    .jpeg()
+    .toBuffer();
+  await page
+    .getByLabel('Choose photos')
+    .setInputFiles(['One.jpg', 'Two.jpg'].map((name) => photo(name, jpeg)));
+  await expect(page.getByText('Private photo', { exact: true })).toHaveCount(2);
+  const details = page.locator('.photo-card').first();
+  await details.getByRole('button', { name: 'Photo details' }).click();
+  await details.getByLabel('Alt text').fill('A test image');
+  await expect(page.getByLabel('Photographer', { exact: true })).toHaveValue('Matt Malin');
+  await page.getByRole('button', { name: 'I have permission for all of these photos' }).click();
+  await expect(page.getByText('All photos approved.')).toBeVisible();
+  await page.getByRole('button', { name: 'Set the photographer for all photos' }).click();
+  await expect(page.getByText('Photographer set for all photos.')).toBeVisible();
+  await details.getByRole('button', { name: 'Save photo details' }).click();
+  await expect(details.getByLabel('Alt text')).toHaveCount(0);
+  const api = '/api' + editor;
+  expect(
+    (await request.patch(api + '/photos', { headers, data: { action: 'approve' } })).status(),
+  ).toBe(401);
+  const { photos } = await (await page.request.get(api)).json();
+  expect(photos).toMatchObject([
+    { rights_status: 'approved', credit: 'Matt Malin', alt_text: 'A test image' },
+    { rights_status: 'approved', credit: 'Matt Malin' },
+  ]);
+});
+
 test('capture three photos, reopen, edit, publish and hide with private media separation', async ({
   page,
   request,

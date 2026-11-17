@@ -313,14 +313,44 @@
   }
 
   async function photoEdit(id: string, [action, details]: Edit) {
+    return updatePhotos('/photos/' + id, { action, ...details });
+  }
+
+  let photographer = $state('Matt Malin');
+  let bulkNotice = $state('');
+  const allApproved = $derived(photos.every((photo) => photo.rights_status === 'approved'));
+
+  async function editAllPhotos(action: 'approve' | 'credit') {
+    if (
+      action === 'approve' &&
+      webStatus === 'published' &&
+      photos.some((photo) => photo.rights_status !== 'approved' && !photo.alt_text.trim()) &&
+      !confirm(
+        'Some photos will appear on the live page without your alt text. Approve them anyway?',
+      )
+    )
+      return;
+    if (
+      await updatePhotos(
+        '/photos',
+        action === 'approve' ? { action } : { action, credit: photographer },
+      )
+    ) {
+      bulkNotice =
+        action === 'approve' ? 'All photos approved.' : 'Photographer set for all photos.';
+    }
+  }
+
+  async function updatePhotos(path: string, edit: object) {
     if (photoBusy || uploadBusy || publishing) return false;
     photoBusy = true;
     photoError = '';
+    bulkNotice = '';
     try {
       const result = await send<{ photos: Photo[]; cover: string | null }>(
-        api + '/photos/' + id,
+        api + path,
         'PATCH',
-        { action, ...details },
+        edit,
       );
       photos = result.photos;
       cover = result.cover;
@@ -496,6 +526,26 @@
       >
     </div>
     <p class="hint">JPEG, PNG, WebP or AVIF. Up to 25 MB each. Photos start private.</p>
+    {#if photos.length}
+      <div class="button-row">
+        <button
+          type="button"
+          class="secondary"
+          disabled={allApproved || photoBusy || uploadBusy || publishing}
+          onclick={() => editAllPhotos('approve')}>I have permission for all of these photos</button
+        >
+      </div>
+      <label>Photographer<input maxlength="300" bind:value={photographer} /></label>
+      <div class="button-row">
+        <button
+          type="button"
+          class="secondary"
+          disabled={!photographer.trim() || photoBusy || uploadBusy || publishing}
+          onclick={() => editAllPhotos('credit')}>Set the photographer for all photos</button
+        >
+      </div>
+    {/if}
+    {#if bulkNotice}<p role="status" class="hint">{bulkNotice}</p>{/if}
     {#if photoError}<p role="alert" class="error">{photoError}</p>{/if}
     {#if uploads.length || photos.length}
       <ul class="photo-list">

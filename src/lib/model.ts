@@ -47,6 +47,11 @@ export const photoEditSchema = z.strictObject({
   rights_status: z.enum(['private', 'approved']).optional(),
 });
 
+export const bulkPhotoEditSchema = z.discriminatedUnion('action', [
+  z.strictObject({ action: z.literal('approve') }),
+  z.strictObject({ action: z.literal('credit'), credit: z.string().trim().min(1).max(300) }),
+]);
+
 export type Fields = z.infer<typeof fieldsSchema>;
 export const initialFields: Fields = {
   title: '',

@@ -22,38 +22,43 @@
     published: boolean;
     onedit: (
       action: 'details' | 'cover' | 'earlier' | 'later' | 'delete',
-      details?: { alt_text: string; credit: string; rights_status: Photo['rights_status'] },
+      details?: Partial<Pick<Photo, 'alt_text' | 'credit' | 'rights_status'>>,
     ) => Promise<boolean>;
   } = $props();
   let alt = $state('');
   let credit = $state('');
   let approved = $state(false);
   let open = $state(false);
+  let original = $state({ alt: '', credit: '', approved: false });
 
   function toggle() {
     if (!open) {
       alt = photo.alt_text;
       credit = photo.credit;
       approved = photo.rights_status === 'approved';
+      original = { alt, credit, approved };
     }
     open = !open;
   }
 
   async function save(event: SubmitEvent) {
     event.preventDefault();
+    const nextAlt = alt === original.alt ? photo.alt_text : alt;
+    const nextRights =
+      approved === original.approved ? photo.rights_status : approved ? 'approved' : 'private';
     if (
       published &&
-      approved &&
-      !alt.trim() &&
+      nextRights === 'approved' &&
+      !nextAlt.trim() &&
       (photo.rights_status !== 'approved' || photo.alt_text.trim()) &&
       !confirm('This photo will appear on the live page without your alt text. Save anyway?')
     )
       return;
     if (
       await onedit('details', {
-        alt_text: alt,
-        credit,
-        rights_status: approved ? 'approved' : 'private',
+        alt_text: alt === original.alt ? undefined : alt,
+        credit: credit === original.credit ? undefined : credit,
+        rights_status: nextRights === photo.rights_status ? undefined : nextRights,
       })
     ) {
       open = false;

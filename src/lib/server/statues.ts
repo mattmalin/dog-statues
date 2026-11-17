@@ -262,6 +262,31 @@ export async function editPhoto(
   });
 }
 
+export async function editAllPhotos(
+  statue: string,
+  edit: { action: 'approve' } | { action: 'credit'; credit: string },
+) {
+  return database().write(async (db) => {
+    const row = await lock(db, statue);
+    if (!row) error(404, 'Statue not found.');
+    if (edit.action === 'approve') {
+      await db.run("UPDATE media_assets SET rights_status='approved' WHERE statue_id=@statue", {
+        statue,
+      });
+    } else {
+      await db.run('UPDATE media_assets SET credit=@credit WHERE statue_id=@statue', {
+        statue,
+        credit: edit.credit,
+      });
+    }
+    await db.run('UPDATE statues SET updated_at=@now WHERE id=@statue', {
+      statue,
+      now: new Date().toISOString(),
+    });
+    return { cover: row.cover_media_id, photos: await getPhotos(db, statue) };
+  });
+}
+
 export function listFeedEntries() {
   return database().all<
     Pick<PublicStatue, 'slug' | 'title' | 'short_summary'> & Pick<Statue, 'id' | 'web_published_at'>
