@@ -146,6 +146,16 @@ export async function savePotential(input: z.infer<typeof potentialSaveSchema>) 
   });
 }
 
+export async function deletePotential(id: string, revision: number) {
+  await database().write(async (db) => {
+    const row = await find(db, id);
+    if (!row) error(404, 'Potential statue not found.');
+    if (row.revision !== revision)
+      error(409, 'This potential statue changed. Reload it before deleting.');
+    await db.run('DELETE FROM potential_statues WHERE id=@id', { id });
+  });
+}
+
 export async function addSuggestions() {
   return database().write(async (db) => {
     let added = 0;

@@ -306,6 +306,12 @@ for (const lostResponse of [false, true]) {
           },
         });
         expect(retry.status()).toBe(409);
+        const deletion = await page.request.delete('/api' + editor, {
+          headers,
+          data: { revision: draft.statue.revision, confirmed: true },
+        });
+        expect(deletion.status()).toBe(409);
+        expect(await deletion.text()).toContain('Check the Instagram publishing status');
         return;
       }
       const link = page.getByRole('link', { name: 'View Instagram post' });
@@ -313,6 +319,16 @@ for (const lostResponse of [false, true]) {
       await page.reload();
       await expect(link).toBeVisible();
       await expect(page.getByRole('button', { name: 'Resume Instagram draft' })).toBeDisabled();
+      const publishedDraft = await (await page.request.get('/api' + editor)).json();
+      expect(
+        (
+          await page.request.delete('/api' + editor, {
+            headers,
+            data: { revision: publishedDraft.statue.revision, confirmed: true },
+          })
+        ).status(),
+      ).toBe(200);
+      expect((await page.request.get('/api' + editor)).status()).toBe(404);
     },
   );
 }

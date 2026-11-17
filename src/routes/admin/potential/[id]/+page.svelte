@@ -1,8 +1,10 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
+  import { goto } from '$app/navigation';
   import { page } from '$app/state';
   import WorkspaceNav from '$lib/components/WorkspaceNav.svelte';
   import PotentialImages from '$lib/components/PotentialImages.svelte';
+  import DeleteRecord from '$lib/components/DeleteRecord.svelte';
   import { potentialStatuses, type PotentialFields } from '$lib/potential';
   import { message, send } from '$lib/client';
   import { googleMapsUrl } from '$lib/maps';
@@ -15,6 +17,21 @@
   let importing = $state(false);
   let notice = $state('');
   let dirty = $state(false);
+  let deleting = $state(false);
+
+  async function removeRecord() {
+    if (saving || importing || deleting || data.row.revision === null) return;
+    deleting = true;
+    try {
+      await send('/api/admin/potential/' + data.row.id, 'DELETE', {
+        revision: data.row.revision,
+        confirmed: true,
+      });
+      await goto('/admin/potential');
+    } finally {
+      deleting = false;
+    }
+  }
   const mapsLink = $derived(googleMapsUrl(fields.maps_url)?.href);
   const sourceLink = $derived(
     /^https?:\/\//i.test(fields.source_url) ? fields.source_url : undefined,
@@ -54,12 +71,13 @@
   ><title>{data.row.name || 'Add potential statue'} · Potential future dog statues</title
   ></svelte:head
 >
-<main id="main" class="shell main editor">
+<main id="main" class="shell main editor" inert={deleting}>
   <WorkspaceNav />
   <a class="back" href="/admin/potential">← Potential future dog statues</a>
   <h1>{data.row.name || 'Add potential statue'}</h1>
   <p>Private research. Save a name, source or map pin to return to later.</p>
   <form
+    inert={deleting}
     method="POST"
     oninput={() => (dirty = true)}
     use:enhance={() => {
@@ -171,4 +189,13 @@
       </p>{/if}
     <button disabled={saving || importing}>{saving ? 'Saving…' : 'Save potential statue'}</button>
   </form>
+  {#if data.row.revision !== null}
+    <DeleteRecord
+      name={fields.name || data.row.name}
+      label="Delete potential statue"
+      explanation="Remove this potential statue and its private research, map details and image links. This does not delete a separate statue post."
+      disabled={saving || importing || deleting}
+      ondelete={removeRecord}
+    />
+  {/if}
 </main>

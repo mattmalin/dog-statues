@@ -13,6 +13,7 @@
   import { message, RequestError, send, uploadId } from '$lib/client';
   import PhotoCard from './PhotoCard.svelte';
   import InstagramShare from './InstagramShare.svelte';
+  import DeleteRecord from './DeleteRecord.svelte';
   import type { InstagramDraft, InstagramPublication } from '$lib/instagram';
 
   let {
@@ -71,6 +72,8 @@
   let saved = $state(JSON.stringify(initial.fields));
   let recoveryBase = $state<number | undefined>();
   let ready = $state(false);
+  let deleting = $state(false);
+  let deleted = $state(false);
   let saving = $state(false);
   let saveError = $state('');
   let storageError = $state(false);
@@ -137,7 +140,7 @@
     }
     ready = true;
     const online = () => {
-      if (dirty && !conflict) void save();
+      if (dirty && !conflict && !deleting && !deleted) void save();
     };
     window.addEventListener('online', online);
     return () => {
@@ -148,6 +151,11 @@
   });
 
   beforeNavigate((navigation) => {
+    if (deleted) return;
+    if (deleting) {
+      navigation.cancel();
+      return;
+    }
     if (
       (!dirty && !saving && !uploads.length && !photoBusy && !publishing) ||
       navigation.willUnload
@@ -160,7 +168,7 @@
   });
 
   $effect(() => {
-    if (!ready) return;
+    if (!ready || deleting || deleted) return;
     const value = serialized;
     remember(value);
     if (!dirty || saving || saveError || conflict || publishing) return;
@@ -169,7 +177,7 @@
   });
 
   async function save() {
-    if (saving || conflict) return false;
+    if (saving || conflict || deleting || deleted) return false;
     if (!dirty) return true;
     const payload = JSON.parse(serialized) as Fields;
     const validation = fieldsSchema.safeParse(payload);
@@ -459,10 +467,27 @@
   function coordinate(value: number | undefined) {
     return value ?? null;
   }
+
+  async function removeRecord() {
+    if (saving || conflict || uploadBusy || photoBusy || publishing || deleting) return;
+    deleting = true;
+    try {
+      await send(api, 'DELETE', { revision, confirmed: true });
+      deleted = true;
+      try {
+        sessionStorage.removeItem(recoveryKey);
+      } catch {
+        /* The deleted record is not recoverable through the editor. */
+      }
+      await goto('/admin/statues');
+    } finally {
+      deleting = false;
+    }
+  }
 </script>
 
 <svelte:head><title>{capture ? 'Quick add' : 'Edit statue'} · Dog Statue Atlas</title></svelte:head>
-<main id="main" class="shell main editor" inert={!ready}>
+<main id="main" class="shell main editor" inert={!ready || deleting}>
   <a class="back" href={capture ? '/admin/inbox' : '/admin/statues'}
     >← {capture ? 'Draft inbox' : 'All statues'}</a
   >
@@ -922,9 +947,16 @@
       {#if publicationNotice}<p role="status">{publicationNotice}</p>{/if}
     </section>
   {/if}
+  <DeleteRecord
+    name={fields.title.trim() || 'Untitled statue'}
+    label="Delete statue"
+    explanation="Remove this statue, its saved details and photo links from the Atlas, including its public page. Existing Instagram posts will remain on Instagram."
+    disabled={saving || conflict || uploadBusy || photoBusy || publishing || deleting}
+    ondelete={removeRecord}
+  />
 </main>
 
-<div class="savebar">
+<div class="savebar" inert={deleting}>
   <div class="shell savebar-inner">
     {#if saveError || conflict}
       <div class="save-issue">

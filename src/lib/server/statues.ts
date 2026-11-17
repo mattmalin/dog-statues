@@ -113,6 +113,26 @@ export async function saveDraft(id: string, revision: number, fields: Fields) {
   });
 }
 
+export async function deleteStatue(id: string, revision: number) {
+  await database().write(async (db) => {
+    const row = await lock(db, id);
+    if (!row) error(404, 'Statue not found.');
+    if (row.revision !== revision) error(409, 'This statue changed. Reload it before deleting.');
+    const [instagram] = await db.all<{ status: string }>(
+      `SELECT status FROM instagram_publications ${writeLock} WHERE statue_id=@id`,
+      { id },
+    );
+    if (instagram && ['preparing', 'unknown'].includes(instagram.status))
+      error(
+        409,
+        'Check the Instagram publishing status before deleting this statue. A post may still be in progress.',
+      );
+    await db.run('DELETE FROM instagram_publications WHERE statue_id=@id', { id });
+    await db.run('DELETE FROM media_assets WHERE statue_id=@id', { id });
+    await db.run('DELETE FROM statues WHERE id=@id', { id });
+  });
+}
+
 function validatePublication(fields: Fields, photosReady: boolean) {
   if (!fields.title.trim()) error(422, 'Add a name before publishing.');
   if (!fields.web_description.trim()) error(422, 'Write the public description before publishing.');

@@ -55,6 +55,10 @@ export const fieldsSchema = z
   });
 
 export const revisionSchema = z.number().int().min(0).max(2147483646);
+export const deleteRecordSchema = z.strictObject({
+  revision: revisionSchema,
+  confirmed: z.literal(true),
+});
 export const saveSchema = z.strictObject({ revision: revisionSchema, fields: fieldsSchema });
 export const publishSchema = z.strictObject({
   revision: revisionSchema,
