@@ -93,18 +93,12 @@ resource database 'Microsoft.Sql/servers/databases@2023-08-01' = {
   name: 'atlas'
   location: location
   sku: {
-    name: 'GP_S_Gen5_2'
-    tier: 'GeneralPurpose'
-    family: 'Gen5'
-    capacity: 2
+    name: 'Basic'
+    tier: 'Basic'
   }
   properties: {
-    autoPauseDelay: 60
-    minCapacity: json('0.5')
-    useFreeLimit: true
-    freeLimitExhaustionBehavior: 'AutoPause'
     requestedBackupStorageRedundancy: 'Local'
-    maxSizeBytes: 34359738368
+    maxSizeBytes: 2147483648
   }
 }
 
