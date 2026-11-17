@@ -30,13 +30,18 @@ const slugFor = (title: string, id: string) => {
 
 type Database = ReturnType<typeof database>;
 type Transaction = Parameters<Parameters<Database['write']>[0]>[0];
+type StoredStatue = Omit<Statue, 'sources'> & { sources: string };
+
+function decodeStatue(row: StoredStatue): Statue {
+  return { ...row, sources: JSON.parse(row.sources), photo_waiver: Boolean(row.photo_waiver) };
+}
 
 async function lock(db: Transaction, id: string) {
-  const [row] = await db.all<Statue>(
+  const [row] = await db.all<StoredStatue>(
     `SELECT ${adminColumns} FROM statues ${writeLock} WHERE id=@id`,
     { id },
   );
-  return row;
+  return row ? decodeStatue(row) : undefined;
 }
 
 function checkRevision(row: Statue | undefined, revision: number): asserts row is Statue {
@@ -61,22 +66,22 @@ export async function listDrafts(inbox: boolean) {
     Pick<
       Statue,
       'id' | 'title' | 'city' | 'country' | 'web_status' | 'editorial_status' | 'updated_at'
-    >
+    > & { instagram_draft: string | null }
   >(
-    `SELECT id, title, city, country, web_status, editorial_status, updated_at FROM statues
+    `SELECT id, title, city, country, web_status, editorial_status, updated_at, instagram_draft FROM statues
       ${inbox ? "WHERE web_status <> 'published' AND editorial_status <> 'ready'" : ''}
       ORDER BY updated_at DESC`,
   );
 }
 
 export async function getDraft(id: string, db: Transaction = database(), lockRow = false) {
-  const [statue] = await db.all<Statue>(
+  const [statue] = await db.all<StoredStatue>(
     `SELECT ${adminColumns} FROM statues ${lockRow ? writeLock : ''} WHERE id=@id`,
     { id },
   );
   if (!statue) error(404, 'Statue not found.');
   return {
-    statue: { ...statue, photo_waiver: Boolean(statue.photo_waiver) },
+    statue: decodeStatue(statue),
     photos: await getPhotos(db, id),
   };
 }
@@ -92,11 +97,10 @@ export async function saveDraft(id: string, revision: number, fields: Fields) {
   return database().write(async (db) => {
     const row = await lock(db, id);
     checkRevision(row, revision);
-    if (row.web_status === 'published') validatePublication(fields, true);
     await db.run(
       `UPDATE statues SET ${fieldNames.map((name) => `${name}=@${name}`).join(', ')},
         revision=revision+1, updated_at=@now WHERE id=@id`,
-      { ...fields, id, now: new Date().toISOString() },
+      { ...fields, sources: JSON.stringify(fields.sources), id, now: new Date().toISOString() },
     );
     return { revision: revision + 1 };
   });
@@ -138,10 +142,11 @@ export async function publish(
         );
       }
       const slug = row.slug ?? slugFor(row.title, id);
+      const snapshot = publicVersion({ ...row, slug }, photos);
       await db.run(
         `UPDATE statues SET slug=@slug, web_status='published', web_published_at=COALESCE(web_published_at,@now),
-         photo_waiver=@waiver, updated_at=@now, revision=revision+1 WHERE id=@id`,
-        { slug, now, id, waiver: Number(waivePhoto) },
+         published_snapshot=@snapshot, photo_waiver=@waiver, updated_at=@now, revision=revision+1 WHERE id=@id`,
+        { slug, now, id, snapshot: JSON.stringify(snapshot), waiver: Number(waivePhoto) },
       );
       return { slug, revision: revision + 1, web_status: 'published' as const };
     }
@@ -220,15 +225,6 @@ export async function editPhoto(
         credit: edit.credit?.trim() ?? photo.credit,
         rights_status: edit.rights_status ?? photo.rights_status,
       };
-      if (
-        row.web_status === 'published' &&
-        !row.photo_waiver &&
-        !photos.some((item) =>
-          item.id === id ? edit.action === 'details' && isPublicPhoto(next) : isPublicPhoto(item),
-        )
-      ) {
-        error(422, 'Approve another photo or unpublish before removing the last public photo.');
-      }
       if (edit.action === 'delete') {
         if (cover === id) cover = null;
         await db.run('DELETE FROM media_assets WHERE id=@id', { id });
@@ -287,64 +283,118 @@ export async function editAllPhotos(
   });
 }
 
-export function listFeedEntries() {
-  return database().all<
-    Pick<PublicStatue, 'slug' | 'title' | 'short_summary'> & Pick<Statue, 'id' | 'web_published_at'>
-  >(
-    `SELECT id, slug, title, short_summary, web_published_at FROM statues
-    WHERE web_status = 'published' AND slug IS NOT NULL
-    ORDER BY web_published_at DESC, slug`,
-  );
+type PublicVersion = { statue: PublicStatue; photos: PublicPhoto[] };
+
+function publicVersion(row: Statue & { slug: string }, photos: Photo[]): PublicVersion {
+  const {
+    title,
+    short_summary,
+    web_description,
+    address,
+    city,
+    region,
+    country,
+    postal_code,
+    google_maps_url,
+    latitude,
+    longitude,
+    cover_media_id,
+    slug,
+  } = row;
+  return {
+    statue: {
+      title,
+      short_summary,
+      web_description,
+      address,
+      city,
+      region,
+      country,
+      postal_code,
+      google_maps_url,
+      latitude,
+      longitude,
+      cover_media_id,
+      slug,
+    },
+    photos: photos.filter(isPublicPhoto).map(({ id, alt_text, credit, width, height }) => ({
+      id,
+      alt_text,
+      credit,
+      width,
+      height,
+    })),
+  };
 }
 
-export function listPublicStatues() {
-  return database().all<
-    Pick<PublicStatue, 'slug' | 'title' | 'short_summary' | 'city' | 'region' | 'country'> & {
-      photo_id: string | null;
-      alt_text: string | null;
-      credit: string | null;
-    }
-  >(
-    `WITH cards AS (
-      SELECT s.slug, s.title, s.short_summary, s.city, s.region, s.country, s.web_published_at,
-        m.id AS photo_id, m.alt_text, m.credit,
-        ROW_NUMBER() OVER (
-          PARTITION BY s.id
-          ORDER BY CASE WHEN m.id = s.cover_media_id THEN 0 ELSE 1 END, m.position, m.id
-        ) AS photo_rank
-      FROM statues s
-      LEFT JOIN media_assets m ON m.statue_id = s.id AND m.rights_status = 'approved'
-      WHERE s.web_status = 'published' AND s.slug IS NOT NULL
-    )
-    SELECT slug, title, short_summary, city, region, country, photo_id, alt_text, credit
-    FROM cards WHERE photo_rank = 1 ORDER BY web_published_at DESC, slug`,
+function withCover(version: PublicVersion, preview = false, id?: string) {
+  const { statue, photos } = version;
+  const cover =
+    photos.find((photo) => photo.id === statue.cover_media_id?.toLowerCase()) ?? photos[0];
+  return { statue: { ...statue, cover_media_id: cover?.id ?? null }, cover, photos, preview, id };
+}
+
+async function publishedVersions() {
+  const rows = await database().all<{
+    id: string;
+    web_published_at: string;
+    published_snapshot: string;
+  }>(
+    "SELECT id, web_published_at, published_snapshot FROM statues WHERE web_status='published' AND published_snapshot IS NOT NULL ORDER BY web_published_at DESC, slug",
   );
+  return rows.map((row) => ({
+    ...withCover(JSON.parse(row.published_snapshot)),
+    id: row.id,
+    web_published_at: row.web_published_at,
+  }));
+}
+
+export async function listFeedEntries() {
+  return (await publishedVersions()).map(({ id, web_published_at, statue }) => ({
+    id,
+    web_published_at,
+    slug: statue.slug,
+    title: statue.title,
+    short_summary: statue.short_summary,
+  }));
+}
+
+export async function listPublicStatues() {
+  return (await publishedVersions()).map(({ statue, cover }) => ({
+    slug: statue.slug,
+    title: statue.title,
+    short_summary: statue.short_summary,
+    city: statue.city,
+    region: statue.region,
+    country: statue.country,
+    photo_id: cover?.id ?? null,
+    alt_text: cover?.alt_text ?? null,
+    credit: cover?.credit ?? null,
+  }));
 }
 
 export async function getPublicStatue(slug: string) {
-  const db = database();
-  const [statue] = await db.all<PublicStatue>(
-    `SELECT slug,title,short_summary,web_description,address,city,region,country,postal_code,google_maps_url,
-      latitude,longitude,cover_media_id FROM statues WHERE slug=@slug AND web_status='published'`,
+  const [row] = await database().all<{ published_snapshot: string }>(
+    "SELECT published_snapshot FROM statues WHERE slug=@slug AND web_status='published' AND published_snapshot IS NOT NULL",
     { slug },
   );
-  if (!statue) error(404, copy.statue.unavailable);
-  const photos = await db.all<PublicPhoto>(
-    `SELECT m.id,m.alt_text,m.credit,m.width,m.height FROM media_assets m JOIN statues s ON s.id=m.statue_id
-      WHERE s.slug=@slug AND s.web_status='published' AND m.rights_status='approved'
-      ORDER BY m.position,m.id`,
-    { slug },
+  if (!row) error(404, copy.statue.unavailable);
+  return withCover(JSON.parse(row.published_snapshot));
+}
+
+export async function getPreview(id: string) {
+  const { statue, photos } = await getDraft(id);
+  return withCover(
+    publicVersion({ ...statue, slug: statue.slug ?? slugFor(statue.title, id) }, photos),
+    true,
+    id,
   );
-  const cover = photos.find((item) => item.id === statue.cover_media_id) ?? photos[0];
-  return { statue: { ...statue, cover_media_id: cover?.id ?? null }, cover, photos };
 }
 
 export async function publicPhoto(id: string) {
-  const [row] = await database().all<{ statue_id: string }>(
-    `SELECT m.statue_id FROM media_assets m JOIN statues s ON s.id=m.statue_id WHERE m.id=@id
-      AND s.web_status='published' AND m.rights_status='approved'`,
-    { id },
+  const version = (await publishedVersions()).find((item) =>
+    item.photos.some((photo) => photo.id === id),
   );
-  if (!row) error(404, 'Photo not found.');
-  return row;
+  if (!version) error(404, 'Photo not found.');
+  return { statue_id: version.id };
 }

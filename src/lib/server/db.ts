@@ -35,6 +35,37 @@ function sqliteClient(): Client {
       db.exec(readFileSync('migrations/sqlite/004_instagram_draft.sql', 'utf8'));
       db.exec('PRAGMA user_version=4');
     }
+    if (version < 6) {
+      db.exec(readFileSync('migrations/sqlite/006_private_publication.sql', 'utf8'));
+      for (const row of db.prepare("SELECT * FROM statues WHERE web_status='published'").all()) {
+        const photos = db
+          .prepare(
+            "SELECT id, alt_text, credit, width, height FROM media_assets WHERE statue_id=? AND rights_status='approved' ORDER BY position,id",
+          )
+          .all(row.id);
+        const keys = [
+          'slug',
+          'title',
+          'short_summary',
+          'web_description',
+          'address',
+          'city',
+          'region',
+          'country',
+          'postal_code',
+          'google_maps_url',
+          'latitude',
+          'longitude',
+          'cover_media_id',
+        ];
+        const statue = Object.fromEntries(keys.map((key) => [key, row[key]]));
+        db.prepare('UPDATE statues SET published_snapshot=? WHERE id=?').run(
+          JSON.stringify({ statue, photos }),
+          row.id,
+        );
+      }
+      db.exec('PRAGMA user_version=6');
+    }
     db.exec('COMMIT');
   } catch (cause) {
     db.exec('ROLLBACK');

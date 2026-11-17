@@ -6,10 +6,10 @@
     newId,
     view,
   }: {
-    rows: Pick<
+    rows: (Pick<
       Statue,
       'id' | 'title' | 'city' | 'country' | 'web_status' | 'editorial_status' | 'updated_at'
-    >[];
+    > & { instagram_draft: string | null })[];
     newId: string;
     view: 'workspace' | 'inbox' | 'all';
   } = $props();
@@ -85,6 +85,11 @@
             >
             <span aria-hidden="true">›</span>
           </a>
+          {#if row.instagram_draft}
+            <a class="instagram-draft-link" href={'/admin/statues/' + row.id + '#instagram'}
+              >Resume Instagram draft</a
+            >
+          {/if}
         </li>
       {/each}
     </ul>

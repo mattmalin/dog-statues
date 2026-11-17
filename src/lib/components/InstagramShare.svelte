@@ -189,7 +189,7 @@
   }
 </script>
 
-<section class="panel" aria-labelledby="instagram-heading">
+<section class="panel" id="instagram" aria-labelledby="instagram-heading">
   <h2 id="instagram-heading">Instagram</h2>
   <button class="secondary" disabled={!ready || busy} onclick={prepare}>
     {busy ? 'Preparing photos…' : 'Open in Instagram'}

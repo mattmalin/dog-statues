@@ -93,6 +93,13 @@ test('capture three photos, reopen, edit, publish and hide with private media se
   await expect(page.getByRole('heading', { name: 'Draft inbox' })).toBeVisible();
   await page.goto(editor);
   await expect(page.getByLabel('Private notes')).toHaveValue('PRIVATE RESEARCH MARKER');
+  await page.getByRole('button', { name: 'Add source', exact: true }).click();
+  await page.getByLabel('Source title').fill('PRIVATE SOURCE TITLE');
+  await page.getByLabel('Source link').fill('https://example.org/research');
+  await page.getByLabel('Source notes', { exact: true }).fill('PRIVATE SOURCE NOTES');
+  await page.getByLabel('Checked on').fill('2026-11-17');
+  await page.getByLabel('Sculptor', { exact: true }).fill('PRIVATE SCULPTOR');
+  await page.getByLabel('Plaque transcription').fill('PRIVATE PLAQUE');
 
   await page.getByRole('button', { name: 'Move Three.jpg earlier' }).click();
   await expect(page.locator('.filename')).toHaveText(['One.jpg', 'Three.jpg', 'Two.jpg']);
@@ -181,7 +188,7 @@ test('capture three photos, reopen, edit, publish and hide with private media se
   expect(html).toContain('Fictional QA Statue');
   expect(html).toContain('A green test image');
   expect(html).not.toMatch(
-    /PRIVATE RESEARCH MARKER|PRIVATE CAPTION MARKER|original_filename|<script>window.bad/,
+    /PRIVATE RESEARCH MARKER|PRIVATE CAPTION MARKER|PRIVATE SOURCE|PRIVATE SCULPTOR|PRIVATE PLAQUE|example.org\/research|original_filename|<script>window.bad/,
   );
   expect((await request.get(media)).headers()['content-type']).toBe('image/jpeg');
 
@@ -189,19 +196,30 @@ test('capture three photos, reopen, edit, publish and hide with private media se
   await page.getByLabel('Visit status').selectOption('visited');
   await expect(page.getByText('Saved to Atlas', { exact: true })).toBeVisible();
   await expect(link).toHaveAttribute('href', slug);
+  expect(await (await request.get(slug)).text()).not.toContain('Renamed QA Statue');
+  expect(await (await request.get(slug)).text()).toContain('Fictional QA Statue');
+  await page.getByRole('button', { name: 'Private preview', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Renamed QA Statue' })).toBeVisible();
+  expect((await request.get(new URL(page.url()).pathname, { maxRedirects: 0 })).status()).toBe(303);
+  await page.getByRole('link', { name: 'Back to editor' }).click();
+  await expect(page.getByLabel('Source title')).toHaveValue('PRIVATE SOURCE TITLE');
+  await expect(page.getByLabel('Checked on')).toHaveValue('2026-11-17');
+  await page.getByRole('button', { name: 'Publish website update' }).click();
+  await expect(page.getByText('Statue published to the website.')).toBeVisible();
   expect(await (await request.get(slug)).text()).toContain('Renamed QA Statue');
 
   const remove = third.getByRole('button', { name: 'Remove photo' });
   await third.getByRole('button', { name: 'Photo details' }).click();
   await remove.click();
-  await expect(page.getByText('Approve another photo or unpublish')).toBeVisible();
+  await expect(third).toHaveCount(0);
+  expect((await request.get(media)).status()).toBe(200);
   await page.getByRole('button', { name: 'Unpublish' }).click();
   await expect(page.getByText('Statue page hidden.')).toBeVisible();
   expect(await (await request.get('/rss.xml')).text()).not.toContain(slug);
   expect(await (await request.get('/')).text()).not.toContain(`href="${slug}"`);
   expect((await request.get(slug)).status()).toBe(404);
   expect((await request.get(media)).status()).toBe(404);
-  expect((await page.request.get(coverUrl + '?size=original')).status()).toBe(200);
+  expect((await page.request.get(coverUrl + '?size=original')).status()).toBe(404);
 
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,
@@ -339,6 +357,12 @@ test('publishing without alt text requires confirmation and keeps a reminder unt
   await page.getByRole('button', { name: 'Save photo details' }).click();
   await expect(page.getByText('Alt text missing', { exact: true })).toHaveCount(0);
   await expect(page.getByText('One approved photo needs alt text.')).toHaveCount(0);
+  expect(await (await request.get(slug)).text()).not.toContain(
+    'alt="A bronze dog sitting on a stone plinth"',
+  );
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.getByRole('button', { name: 'Publish website update' }).click();
+  await expect(page.getByText('Statue published to the website.')).toBeVisible();
   expect(await (await request.get(slug)).text()).toContain(
     'alt="A bronze dog sitting on a stone plinth"',
   );

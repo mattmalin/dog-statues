@@ -22,6 +22,14 @@ Open [the owner sign-in](http://127.0.0.1:5173/admin) and use that passphrase. V
 
 For real photos and notes you want to keep outside Dropbox sync, set `ATLAS_DATA_DIR` in `.env` to a local directory outside your Dropbox folder.
 
+## Private previews, research and website updates
+
+The editor saves private drafts. **Private preview** saves the latest text and opens an authenticated preview using the public page layout and the selected approved photos. Return to the editor to publish. Saving changes to a published statue keeps the existing public version online until **Publish website update** is confirmed. This includes the homepage, RSS, photo captions and gallery ordering. **Unpublish** hides the page and its public photos.
+
+Research has private source titles, links, checked dates and notes, plus sculptor, unveiling details and plaque transcription fields. These are excluded from the public page and its serialized data. Write verified information into your website description when you want to publish it. The publishing checklist links to missing required fields and optional map information. Statue lists include **Resume Instagram draft** for saved Instagram preparations.
+
+Apply `006_private_publication.sql` through `npm.cmd run migrate` before deploying. It adds the research fields and captures the current public content and photos of every already published statue. The app continues editing the draft columns and publishes a new snapshot inside its existing publication transaction. SQLite applies its matching migration automatically.
+
 ## Import a Google Maps pin
 
 In the statue editor, paste a Google Maps share link under **Location** and select **Import location from pin**. In quick add, open **Add more details** to reach Location. Check the coordinates and address before publishing. The existing public maps link opens the saved pin when present.

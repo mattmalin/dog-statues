@@ -322,15 +322,6 @@
 
   async function editAllPhotos(action: 'approve' | 'credit') {
     if (
-      action === 'approve' &&
-      webStatus === 'published' &&
-      photos.some((photo) => photo.rights_status !== 'approved' && !photo.alt_text.trim()) &&
-      !confirm(
-        'Some photos will appear on the live page without your alt text. Approve them anyway?',
-      )
-    )
-      return;
-    if (
       await updatePhotos(
         '/photos',
         action === 'approve' ? { action } : { action, credit: photographer },
@@ -405,6 +396,10 @@
   async function done() {
     if (await save())
       await goto(capture ? '/admin/inbox' : '/admin/statues', { invalidateAll: true });
+  }
+
+  async function preview() {
+    if (await save()) await goto('/admin/statues/' + recordId() + '/preview');
   }
 
   async function copyCaption() {
@@ -552,7 +547,6 @@
         {#each photos as photo, index (photo.id)}
           <PhotoCard
             {photo}
-            published={webStatus === 'published'}
             path={api + '/photos/' + photo.id}
             cover={cover === photo.id}
             first={index === 0}
@@ -742,6 +736,79 @@
     </section>
     <section class="panel" id="research">
       <h2>Research</h2>
+      <div class="field-grid">
+        <label
+          >Sculptor<input maxlength="300" bind:value={fields.sculptor} oninput={changed} /></label
+        >
+        <label
+          >Unveiling details<input
+            maxlength="300"
+            bind:value={fields.unveiling}
+            oninput={changed}
+          /></label
+        >
+      </div>
+      <label
+        >Plaque transcription<textarea
+          rows="4"
+          maxlength="8000"
+          bind:value={fields.plaque}
+          oninput={changed}
+        ></textarea></label
+      >
+      <p class="hint">
+        Sculptor, unveiling details, plaque transcription and source notes are private research.
+        Include verified facts in your website description when ready.
+      </p>
+      <h3>Sources</h3>
+      {#each fields.sources as source, index}
+        <fieldset>
+          <legend>Source {index + 1}</legend>
+          <label
+            >Source title<input
+              maxlength="300"
+              bind:value={source.title}
+              oninput={changed}
+            /></label
+          >
+          <label
+            >Source link<input
+              type="url"
+              maxlength="2048"
+              bind:value={source.url}
+              oninput={changed}
+            /></label
+          >
+          <label
+            >Checked on<input type="date" bind:value={source.checked} oninput={changed} /></label
+          >
+          <label
+            >Source notes<textarea
+              maxlength="4000"
+              rows="3"
+              bind:value={source.notes}
+              oninput={changed}
+            ></textarea></label
+          >
+          <button
+            type="button"
+            class="secondary"
+            onclick={() => {
+              fields.sources.splice(index, 1);
+              changed();
+            }}>Remove source</button
+          >
+        </fieldset>
+      {/each}
+      <button
+        type="button"
+        class="secondary"
+        disabled={fields.sources.length >= 40}
+        onclick={() => {
+          fields.sources.push({ title: '', url: '', notes: '', checked: '' });
+          changed();
+        }}>Add source</button
+      >
       {#if !capture}<label
           >Private notes<textarea
             rows="5"
@@ -780,6 +847,41 @@
     {/if}
     <section class="panel" id="publishing">
       <h2>Publishing</h2>
+      <p class="hint">Saved edits stay private until you publish to the website.</p>
+      <ul>
+        <li><a href="#overview">{fields.title.trim() ? '✓ Name' : 'Add a name'}</a></li>
+        <li>
+          <a href="#overview"
+            >{fields.web_description.trim()
+              ? '✓ Website description'
+              : 'Add a website description'}</a
+          >
+        </li>
+        <li>
+          <a href="#location"
+            >{(fields.city.trim() && fields.country.trim()) ||
+            (fields.latitude !== null && fields.longitude !== null)
+              ? '✓ Location'
+              : 'Add a location'}</a
+          >
+        </li>
+        <li>
+          <a href="#photos"
+            >{photos.some((photo) => photo.rights_status === 'approved') || waivePhoto
+              ? '✓ Photos'
+              : 'Approve a photo or choose to publish without photos'}</a
+          >
+        </li>
+        {#if !fields.google_maps_url && (fields.latitude === null || fields.longitude === null)}<li>
+            <a href="#location">Map pin optional</a>
+          </li>{/if}
+      </ul>
+      <button
+        type="button"
+        class="secondary"
+        disabled={publishing || saving || conflict || uploadBusy || photoBusy}
+        onclick={preview}>Private preview</button
+      >
       {#if missingAlt}
         <p class="hint" role="status">
           {missingAlt === 1
@@ -789,7 +891,6 @@
         </p>
       {/if}
       {#if webStatus === 'published' && slug}
-        <p>Saved changes appear on the website.</p>
         <div class="button-row">
           <a class="button secondary" href={'/statues/' + slug} target="_blank" rel="noopener"
             >View public page ↗</a
@@ -800,20 +901,23 @@
             onclick={() => publication('unpublish')}>Unpublish</button
           >
         </div>
-      {:else}
-        <p class="hint">
-          Add a name, public description and location. Approve at least one photo, or choose to
-          publish without photos.
-        </p>
-        <label class="check"
-          ><input type="checkbox" bind:checked={waivePhoto} /> Allow publication without photos</label
-        >
-        <button
-          disabled={publishing || saving || conflict || uploadBusy || photoBusy}
-          onclick={() => publication('publish')}
-          >{missingAlt ? 'Publish without alt text' : 'Publish to website'}</button
-        >
       {/if}
+      <p class="hint">
+        Add a name, public description and location. Approve at least one photo, or choose to
+        publish without photos.
+      </p>
+      <label class="check"
+        ><input type="checkbox" bind:checked={waivePhoto} /> Allow publication without photos</label
+      >
+      <button
+        disabled={publishing || saving || conflict || uploadBusy || photoBusy}
+        onclick={() => publication('publish')}
+        >{missingAlt
+          ? 'Publish without alt text'
+          : webStatus === 'published'
+            ? 'Publish website update'
+            : 'Publish to website'}</button
+      >
       {#if publicationError}<p role="alert" class="error">{publicationError}</p>{/if}
       {#if publicationNotice}<p role="status">{publicationNotice}</p>{/if}
     </section>

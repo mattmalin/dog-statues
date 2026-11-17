@@ -272,6 +272,12 @@ p {
 .records a:hover {
   background: var(--wash);
 }
+.records .instagram-draft-link {
+  display: block;
+  min-height: 44px;
+  font-size: 0.875rem;
+  padding-top: 0;
+}
 .records strong,
 .filename {
   overflow-wrap: anywhere;

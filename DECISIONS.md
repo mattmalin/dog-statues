@@ -1,5 +1,8 @@
 # Architecture decisions
 
+- **Private publication snapshots.** Publishing stores only the public fields and approved photo metadata in the statue row. Public pages, the directory, RSS and photo access use that saved version. Preview uses the same page component with authenticated photo URLs. Private research and drafts stay in the existing statue record. The migration captures current published content before the app changes its read path.
+- **Sources stay private.** The owner requested private research sources for this release. Source notes, checked dates, sculptor, unveiling details and plaque transcriptions are available in the editor and excluded from public snapshots.
+
 ## Milestones 0 and 1
 
 - **One SvelteKit application.** TypeScript, server-rendered public pages and authenticated JSON endpoints share the same repository functions. Plain text is escaped by Svelte and preserves line breaks. Markdown is deferred.

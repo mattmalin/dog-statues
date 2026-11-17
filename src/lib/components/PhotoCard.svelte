@@ -9,7 +9,6 @@
     last,
     busy,
     capture,
-    published,
     onedit,
   }: {
     photo: Photo;
@@ -19,7 +18,6 @@
     last: boolean;
     busy: boolean;
     capture: boolean;
-    published: boolean;
     onedit: (
       action: 'details' | 'cover' | 'earlier' | 'later' | 'delete',
       details?: Partial<Pick<Photo, 'alt_text' | 'credit' | 'rights_status'>>,
@@ -43,17 +41,8 @@
 
   async function save(event: SubmitEvent) {
     event.preventDefault();
-    const nextAlt = alt === original.alt ? photo.alt_text : alt;
     const nextRights =
       approved === original.approved ? photo.rights_status : approved ? 'approved' : 'private';
-    if (
-      published &&
-      nextRights === 'approved' &&
-      !nextAlt.trim() &&
-      (photo.rights_status !== 'approved' || photo.alt_text.trim()) &&
-      !confirm('This photo will appear on the live page without your alt text. Save anyway?')
-    )
-      return;
     if (
       await onedit('details', {
         alt_text: alt === original.alt ? undefined : alt,

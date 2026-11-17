@@ -4,6 +4,24 @@ import { googleMapsUrl } from './maps';
 export const idSchema = z.uuidv4();
 export const maxUpload = 25 * 1024 * 1024;
 export const maxPhotos = 20;
+export const sourceSchema = z.strictObject({
+  title: z.string().max(300),
+  url: z
+    .string()
+    .max(2048)
+    .refine((value) => {
+      if (!value) return true;
+      try {
+        const url = new URL(value);
+        return ['http:', 'https:'].includes(url.protocol) && !url.username && !url.password;
+      } catch {
+        return false;
+      }
+    }, 'Enter an http or https source link.'),
+  notes: z.string().max(4000),
+  checked: z.string().regex(/^(?:\d{4}-\d{2}-\d{2})?$/),
+});
+export type Source = z.infer<typeof sourceSchema>;
 
 export const fieldsSchema = z
   .strictObject({
@@ -12,6 +30,10 @@ export const fieldsSchema = z
     web_description: z.string().max(16000),
     instagram_caption: z.string().max(2200),
     private_notes: z.string().max(16000),
+    sources: z.array(sourceSchema).max(40).default([]),
+    sculptor: z.string().max(300).default(''),
+    unveiling: z.string().max(300).default(''),
+    plaque: z.string().max(8000).default(''),
     address: z.string().max(320),
     city: z.string().max(100),
     region: z.string().max(100),
@@ -59,6 +81,10 @@ export const initialFields: Fields = {
   web_description: '',
   instagram_caption: '',
   private_notes: '',
+  sources: [],
+  sculptor: '',
+  unveiling: '',
+  plaque: '',
   address: '',
   city: '',
   region: '',
