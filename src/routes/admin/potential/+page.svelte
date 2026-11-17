@@ -1,5 +1,7 @@
 <script lang="ts">
   import WorkspaceNav from '$lib/components/WorkspaceNav.svelte';
+  import PotentialMap from '$lib/components/PotentialMap.svelte';
+  import RecordThumbnail from '$lib/components/RecordThumbnail.svelte';
   import { potentialStatuses } from '$lib/potential';
   import { page } from '$app/state';
   import type { PageProps } from './$types';
@@ -41,10 +43,25 @@
     <form method="POST" action="?/suggestions">
       <button class="secondary">Add researched suggestions</button>
     </form>
+    {#if data.researchedImageCount}
+      <p>
+        {data.researchedImageCount} sourced reference images are available. Add missing links to existing
+        entries without replacing your images or selected thumbnails. These images are for private research;
+        source and permission notes are saved with each one.
+      </p>
+      <form method="POST" action="?/images">
+        <button class="secondary">Add researched images</button>
+      </form>
+    {/if}
   </details>
   {#if page.url.searchParams.has('added')}
     <p role="status">{page.url.searchParams.get('added')} suggestions added.</p>
   {/if}
+  {#if page.url.searchParams.has('images_added')}<p role="status">
+      {page.url.searchParams.get('images_added')} image links added across {page.url.searchParams.get(
+        'records_updated',
+      )} entries.
+    </p>{/if}
   <div class="field-grid">
     <label>Search potential statues<input type="search" bind:value={search} /></label>
     <label
@@ -57,15 +74,19 @@
     <label class="check"><input type="checkbox" bind:checked={london} /> London only</label>
   </div>
   <p class="hint">{filtered.length} potential statues</p>
+  <PotentialMap rows={filtered} />
   <ul class="records">
     {#each filtered as row (row.id)}
       <li>
         <a href={'/admin/potential/' + row.id}>
-          <div>
-            <strong>{row.name}</strong><small
-              >{[row.city, row.country].filter(Boolean).join(', ')}</small
-            >
-            <small>{row.pin_checked ? 'Pin checked' : 'Pin to check'}</small>
+          <div class="record-identity">
+            <RecordThumbnail src={row.images[0]?.image_url} />
+            <div>
+              <strong>{row.name}</strong><small
+                >{[row.city, row.country].filter(Boolean).join(', ')}</small
+              >
+              <small>{row.pin_checked ? 'Pin checked' : 'Pin to check'}</small>
+            </div>
           </div>
           <span class="badge">{potentialStatuses[row.status]}</span><span aria-hidden="true">›</span
           >

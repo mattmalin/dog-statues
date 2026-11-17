@@ -2,6 +2,36 @@ import { z } from 'zod';
 import { googleMapsUrl } from './maps';
 import { idSchema, revisionSchema } from './model';
 
+export function researchUrl(value: string, image = false) {
+  try {
+    const url = new URL(value);
+    return (
+      !url.username &&
+      !url.password &&
+      (image ? url.protocol === 'https:' : ['http:', 'https:'].includes(url.protocol))
+    );
+  } catch {
+    return false;
+  }
+}
+
+export const potentialImageSchema = z.strictObject({
+  id: idSchema,
+  image_url: z
+    .string()
+    .trim()
+    .max(2048)
+    .refine((value) => researchUrl(value, true), 'Enter an HTTPS image URL.'),
+  source_url: z
+    .string()
+    .trim()
+    .max(2048)
+    .refine((value) => researchUrl(value), 'Add the page where this image was found.'),
+  credit: z.string().trim().max(500),
+  reuse_notes: z.string().trim().max(1500),
+});
+export type PotentialImage = z.infer<typeof potentialImageSchema>;
+
 export const potentialStatuses = {
   researching: 'Researching',
   to_visit: 'To visit',
@@ -37,6 +67,7 @@ export const potentialFieldsSchema = z
         }
       }, 'Enter an http or https source link.'),
     notes: z.string().max(12000),
+    images: z.array(potentialImageSchema).max(24).default([]),
     status: z.enum(['researching', 'to_visit', 'visited', 'archived']),
   })
   .refine((value) => (value.latitude === null) === (value.longitude === null), {
@@ -68,5 +99,6 @@ export const initialPotential: PotentialFields = {
   pin_checked: false,
   source_url: '',
   notes: '',
+  images: [],
   status: 'researching',
 };

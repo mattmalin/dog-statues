@@ -1,5 +1,6 @@
 <script lang="ts">
   import WorkspaceNav from './WorkspaceNav.svelte';
+  import RecordThumbnail from './RecordThumbnail.svelte';
   import type { Statue } from '$lib/model';
   let {
     rows,
@@ -9,7 +10,7 @@
     rows: (Pick<
       Statue,
       'id' | 'title' | 'city' | 'country' | 'web_status' | 'editorial_status' | 'updated_at'
-    > & { instagram_draft: string | null })[];
+    > & { instagram_draft: string | null; thumbnail_media_id: string | null })[];
     newId: string;
     view: 'workspace' | 'inbox' | 'all';
   } = $props();
@@ -69,10 +70,21 @@
       {#each filtered as row (row.id)}
         <li>
           <a href={'/admin/statues/' + row.id}>
-            <div>
-              <strong>{row.title.trim() || 'Untitled statue'}</strong><small
-                >{[row.city, row.country].filter(Boolean).join(', ') || 'Location to add'}</small
-              >
+            <div class="record-identity">
+              <RecordThumbnail
+                src={row.thumbnail_media_id
+                  ? '/api/admin/statues/' +
+                    row.id +
+                    '/photos/' +
+                    row.thumbnail_media_id +
+                    '?size=thumb'
+                  : null}
+              />
+              <div>
+                <strong>{row.title.trim() || 'Untitled statue'}</strong><small
+                  >{[row.city, row.country].filter(Boolean).join(', ') || 'Location to add'}</small
+                >
+              </div>
             </div>
             <span class:live={row.web_status === 'published'} class="badge"
               >{row.web_status === 'published'

@@ -66,11 +66,18 @@ export async function listDrafts(inbox: boolean) {
     Pick<
       Statue,
       'id' | 'title' | 'city' | 'country' | 'web_status' | 'editorial_status' | 'updated_at'
-    > & { instagram_draft: string | null }
+    > & { instagram_draft: string | null; thumbnail_media_id: string | null }
   >(
-    `SELECT id, title, city, country, web_status, editorial_status, updated_at, instagram_draft FROM statues
-      ${inbox ? "WHERE web_status <> 'published' AND editorial_status <> 'ready'" : ''}
-      ORDER BY updated_at DESC`,
+    `WITH ranked_photos AS (
+      SELECT p.id, p.statue_id, ROW_NUMBER() OVER (
+        PARTITION BY p.statue_id ORDER BY CASE WHEN p.id=s.cover_media_id THEN 0 ELSE 1 END, p.position, p.id
+      ) AS photo_rank FROM media_assets p JOIN statues s ON s.id=p.statue_id
+    )
+    SELECT s.id, s.title, s.city, s.country, s.web_status, s.editorial_status,
+      s.updated_at, s.instagram_draft, p.id AS thumbnail_media_id
+    FROM statues s LEFT JOIN ranked_photos p ON p.statue_id=s.id AND p.photo_rank=1
+      ${inbox ? "WHERE s.web_status <> 'published' AND s.editorial_status <> 'ready'" : ''}
+      ORDER BY s.updated_at DESC`,
   );
 }
 

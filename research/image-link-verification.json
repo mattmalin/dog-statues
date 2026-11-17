@@ -1,0 +1,444 @@
+{
+  "checked_at": "2026-11-17T21:13:39.601806+00:00",
+  "results": [
+    {
+      "statue_id": "3f9bd925-6259-4ffb-b946-79cf1c510001",
+      "name": "Best Friends – dog and child",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://tanyarussell.com/wp-content/uploads/2026/10/Selected-Best-Friends-Arhbishops-Park-23-of-26-scaled.jpeg"
+    },
+    {
+      "statue_id": "3f9bd925-6259-4ffb-b946-79cf1c510002",
+      "name": "Dogs of Alcibiades",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/c/c8/Eastern_Dog_of_Alcibiades%2C_Victoria_Park_%2804%29.jpg"
+    },
+    {
+      "statue_id": "3f9bd925-6259-4ffb-b946-79cf1c510003",
+      "name": "Hector – dog on Richard Green statue",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/3/33/Richard_Green_and_his_one-eared_dog_-_geograph.org.uk_-_863576.jpg"
+    },
+    {
+      "statue_id": "1c64168e-ef47-4ad7-827c-0e952c610001",
+      "name": "Brown Dog Memorial",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/1/14/Brown_Dog_-_Battersea_Park_-_2008-04-09.jpg"
+    },
+    {
+      "statue_id": "1c64168e-ef47-4ad7-827c-0e952c610008",
+      "name": "Paparazzi Dogs",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://paddingtonnow.co.uk/wp-content/uploads/2024/05/image1.jpeg"
+    },
+    {
+      "statue_id": "3f9bd925-6259-4ffb-b946-79cf1c510006",
+      "name": "Dog and Pot",
+      "status": 200,
+      "content_type": "image/png",
+      "verified": true,
+      "image_url": "https://www.dickensfellowship.org/templates/yootheme/cache/45/dog%20and%20pot-45fecf95.png"
+    },
+    {
+      "statue_id": "3f9bd925-6259-4ffb-b946-79cf1c510007",
+      "name": "Whippet Good bench",
+      "verified": true,
+      "image_url": "https://cdn.prod.website-files.com/66a8d3eae96bdc9167449640/66a8d3eae96bdc916744986a_MAIN-IMAGE.avif",
+      "status": 200,
+      "content_type": "image/avif"
+    },
+    {
+      "statue_id": "3f9bd925-6259-4ffb-b946-79cf1c510008",
+      "name": "Lion on Tom Sayers tomb",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/8/84/2010_London_dog.jpg"
+    },
+    {
+      "statue_id": "1c64168e-ef47-4ad7-827c-0e952c610004",
+      "name": "Dog at Animals in War Memorial",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/0/08/Animalsinwar-dogdetail.JPG"
+    },
+    {
+      "statue_id": "3f9bd925-6259-4ffb-b946-79cf1c510010",
+      "name": "Esmé Percy dog drinking fountain",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/6/6b/Esme_Percy_Dog_sculpture%2C_Kensington_Gardens_2024-06-05.jpg"
+    },
+    {
+      "statue_id": "1c64168e-ef47-4ad7-827c-0e952c610006",
+      "name": "Dogs on Robert Grosvenor monument",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/a/a2/Robert_Grosvenor_statue%2C_Westminster%2C_London.JPG"
+    },
+    {
+      "statue_id": "3f9bd925-6259-4ffb-b946-79cf1c510012",
+      "name": "Bashaw the Newfoundland",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/d/d6/Bashaw%2C_the_faithfull_friend_of_man_02.jpg"
+    },
+    {
+      "statue_id": "3f9bd925-6259-4ffb-b946-79cf1c510013",
+      "name": "Jennings Dog / Molossian Hound",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/6/6f/Molossian_hound_%28Jennings_dog%29.jpg"
+    },
+    {
+      "statue_id": "1c64168e-ef47-4ad7-827c-0e952c610002",
+      "name": "Trump the pug (Hogarth statue)",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/e/ee/Chiswick%2C_Statue_of_William_Hogarth_with_Trump.jpg"
+    },
+    {
+      "statue_id": "1c64168e-ef47-4ad7-827c-0e952c610003",
+      "name": "Blind Beggar and His Dog",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/9/9c/Blind_Beggar_and_His_Dog_2024-08-02.jpg"
+    },
+    {
+      "statue_id": "1c64168e-ef47-4ad7-827c-0e952c610007",
+      "name": "Dog in a Kennel",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/0/09/Dog_in_a_kennel_sculpture.jpg"
+    },
+    {
+      "statue_id": "3f9bd925-6259-4ffb-b946-79cf1c510017",
+      "name": "White Greyhound of Richmond – Kew",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/8/8c/The_Queen%27s_Beasts%2C_Kew%2C_The_white_greyhound_of_Richmond.jpg"
+    },
+    {
+      "statue_id": "3f9bd925-6259-4ffb-b946-79cf1c510018",
+      "name": "White Greyhound of Richmond – Moat Bridge",
+      "verified": false,
+      "error": "HTTP Error 429: Your bot is making too many requests. Please reduce your request rate or contact bot-traffic@wikimedia.org (f263c81)",
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/5/5c/Heraldic_beast%2C_Hampton_Court-geograph-2588873-by-Philip-Halling.jpg"
+    },
+    {
+      "statue_id": "3f9bd925-6259-4ffb-b946-79cf1c510019",
+      "name": "White Greyhound of Richmond – Chapel Court",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://hrp.imgix.net/https%3A%2F%2Fhistoricroyalpalaces.picturepark.com%2FGo%2F5nb9Uiwr%2FV%2F11580%2F36?auto=format&s=391a27636da0318280e226f324b7e7c6"
+    },
+    {
+      "statue_id": "3f9bd925-6259-4ffb-b946-79cf1c510020",
+      "name": "Gunnersbury wooden dog",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://media.sketchfab.com/models/a11cba56d329493eb935ff490865e3e9/thumbnails/85cd212d99904bad98f7304cd7bc0799/feea445d3e24476a806877764ee33d17.jpeg"
+    },
+    {
+      "statue_id": "3f9bd925-6259-4ffb-b946-79cf1c510021",
+      "name": "Kozo nkisi double-headed dog",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://lh3.googleusercontent.com/ci/AL18g_SlggYCaxahRxtrCKsgTjbW-ny-miNrrl9Rub48dQFNiBxTxUZ2_p7PhwrRvzIqcq9PfrMs3g"
+    },
+    {
+      "statue_id": "3f9bd925-6259-4ffb-b946-79cf1c510022",
+      "name": "Nipper – giant HMV dog",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://www.vgwoodhouse.co.uk/images/hayes-shipping-building-and-nipper.jpg"
+    },
+    {
+      "statue_id": "3f9bd925-6259-4ffb-b946-79cf1c510023",
+      "name": "Queen Mother with corgis Rush and Minnie",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://pauldaysculpture.com/wp-content/uploads/Queen-Mother-Memorial_5096-882x551.jpg"
+    },
+    {
+      "statue_id": "3f9bd925-6259-4ffb-b946-79cf1c510024",
+      "name": "Tandem Lovers – Dogman and Rabbitwoman",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://cdn.shopify.com/s/files/1/0089/0499/8976/files/Tandem-Lovers.jpg?v=1673585804"
+    },
+    {
+      "statue_id": "3f9bd925-6259-4ffb-b946-79cf1c510025",
+      "name": "The Friendship Bench – Dogman and Rabbitwoman",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://cdn.shopify.com/s/files/1/0089/0499/8976/files/The-friendship-Bench.jpg?v=1673585121"
+    },
+    {
+      "statue_id": "3f9bd925-6259-4ffb-b946-79cf1c510026",
+      "name": "Together Forever on Wheels – Dogman",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://cdn.shopify.com/s/files/1/0089/0499/8976/files/togetherforeveronwheels.jpg?v=1671684639"
+    },
+    {
+      "statue_id": "3f9bd925-6259-4ffb-b946-79cf1c510027",
+      "name": "Wild Table of Love – Dogman",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://cdn.shopify.com/s/files/1/0089/0499/8976/files/wildtableoflove.jpg?v=1671752220"
+    },
+    {
+      "statue_id": "3f9bd925-6259-4ffb-b946-79cf1c510028",
+      "name": "Rise Up Rhino – Dogman",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://kingstonuponthames.info/wp-content/uploads/2024/10/KingstonFirst42-1024x683.jpg"
+    },
+    {
+      "statue_id": "3f9bd925-6259-4ffb-b946-79cf1c510029",
+      "name": "A Little Greener",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://gillieandmarc.com/cdn/shop/files/flower1_97189529-cda6-4223-befc-f7881c2640ec_360x.jpg?v=1719812406"
+    },
+    {
+      "statue_id": "3f9bd925-6259-4ffb-b946-79cf1c510030",
+      "name": "A Little Helping Hand",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://gillieandmarc.com/cdn/shop/files/hand2_360x.jpg?v=1693873098"
+    },
+    {
+      "statue_id": "3f9bd925-6259-4ffb-b946-79cf1c510031",
+      "name": "A Little Eco Ride",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://gillieandmarc.com/cdn/shop/files/skate3_360x.jpg?v=1722564952"
+    },
+    {
+      "statue_id": "3f9bd925-6259-4ffb-b946-79cf1c510032",
+      "name": "A Little Time to Play Ball",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://gillieandmarc.com/cdn/shop/files/ball1_360x.jpg?v=1693801291"
+    },
+    {
+      "statue_id": "3f9bd925-6259-4ffb-b946-79cf1c510033",
+      "name": "A Little Climb to the Top",
+      "status": 200,
+      "content_type": "image/png",
+      "verified": true,
+      "image_url": "https://gillieandmarc.com/cdn/shop/files/A-Little-Climb-to-the-Top1_360x.png?v=1719810828"
+    },
+    {
+      "statue_id": "3f9bd925-6259-4ffb-b946-79cf1c510034",
+      "name": "A Little Home Time with Friends",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://gillieandmarc.com/cdn/shop/files/home10_360x.jpg?v=1693873402"
+    },
+    {
+      "statue_id": "3f9bd925-6259-4ffb-b946-79cf1c510035",
+      "name": "A Little Surprise Friendship",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://gillieandmarc.com/cdn/shop/files/friendship1_bb6c579f-9fa7-4a55-b62c-94edb2d43815_360x.jpg?v=1693874384"
+    },
+    {
+      "statue_id": "3f9bd925-6259-4ffb-b946-79cf1c510036",
+      "name": "A Little Snap of Happiness",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://gillieandmarc.com/cdn/shop/files/snap8_360x.jpg?v=1722564616"
+    },
+    {
+      "statue_id": "3f9bd925-6259-4ffb-b946-79cf1c510037",
+      "name": "A Little Recycle",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://gillieandmarc.com/cdn/shop/files/coke17_360x.jpg?v=1686467868"
+    },
+    {
+      "statue_id": "3f9bd925-6259-4ffb-b946-79cf1c510038",
+      "name": "A Little Time Together",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://gillieandmarc.com/cdn/shop/files/bench1_df68dfec-1719-4fd3-be56-e30d9cf5c922_360x.jpg?v=1693875315"
+    },
+    {
+      "statue_id": "3f9bd925-6259-4ffb-b946-79cf1c510039",
+      "name": "A Little Step at a Time",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://gillieandmarc.com/cdn/shop/files/converse1_360x.jpg?v=1722564660"
+    },
+    {
+      "statue_id": "3f9bd925-6259-4ffb-b946-79cf1c510040",
+      "name": "A Little Help from Friends",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://gillieandmarc.com/cdn/shop/files/bird5_360x.jpg?v=1719810251"
+    },
+    {
+      "statue_id": "3f9bd925-6259-4ffb-b946-79cf1c510041",
+      "name": "A Little Love for Friends",
+      "status": 200,
+      "content_type": "image/png",
+      "verified": true,
+      "image_url": "https://gillieandmarc.com/cdn/shop/files/A-Little-Love-for-Friends-_Bronze-Sculpture_1_360x.png?v=1719815147"
+    },
+    {
+      "statue_id": "3f9bd925-6259-4ffb-b946-79cf1c510042",
+      "name": "A Little Community Support",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://gillieandmarc.com/cdn/shop/files/community6_360x.jpg?v=1693872577"
+    },
+    {
+      "statue_id": "3f9bd925-6259-4ffb-b946-79cf1c510043",
+      "name": "A Little Tidy Up",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://gillieandmarc.com/cdn/shop/files/tidy2_360x.jpg?v=1687758100"
+    },
+    {
+      "statue_id": "3f9bd925-6259-4ffb-b946-79cf1c510044",
+      "name": "A Little Clean Up",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://gillieandmarc.com/cdn/shop/files/soup9_360x.jpg?v=1686467363"
+    },
+    {
+      "statue_id": "3f9bd925-6259-4ffb-b946-79cf1c510045",
+      "name": "A Little Care for Others",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://gillieandmarc.com/cdn/shop/files/care3_360x.jpg?v=1693872096"
+    },
+    {
+      "statue_id": "3f9bd925-6259-4ffb-b946-79cf1c510046",
+      "name": "Giro dog memorial gravestone",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0f/Giro_the_dog%27s_grave.jpg/960px-Giro_the_dog%27s_grave.jpg"
+    },
+    {
+      "statue_id": "3f9bd925-6259-4ffb-b946-79cf1c510047",
+      "name": "Geoffrey Barkington former bench",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://d2kdkfqxnvpuu9.cloudfront.net/images/giant/81777/accb44ba92b6.jpg"
+    },
+    {
+      "statue_id": "1c64168e-ef47-4ad7-827c-0e952c610005",
+      "name": "Dog in Pan / Rush of Green",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8f/GOC_London_Public_Art_2_114_%E2%80%93_The_Rush_of_Green.jpg/1280px-GOC_London_Public_Art_2_114_%E2%80%93_The_Rush_of_Green.jpg"
+    },
+    {
+      "statue_id": "1c64168e-ef47-4ad7-827c-0e952c610009",
+      "name": "Hachiko statue",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6e/The_Hachiko_statue_at_Shibuya%2C_Tokyo%2C_Japan.jpg/1280px-The_Hachiko_statue_at_Shibuya%2C_Tokyo%2C_Japan.jpg"
+    },
+    {
+      "statue_id": "1c64168e-ef47-4ad7-827c-0e952c610010",
+      "name": "Balto statue",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/3/31/Balto.jpg"
+    },
+    {
+      "statue_id": "1c64168e-ef47-4ad7-827c-0e952c610011",
+      "name": "Greyfriars Bobby",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7d/Greyfriars_Bobby_Fountain.jpg/960px-Greyfriars_Bobby_Fountain.jpg"
+    },
+    {
+      "statue_id": "1c64168e-ef47-4ad7-827c-0e952c610012",
+      "name": "Fala at the Franklin Delano Roosevelt Memorial",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/18/Washington_DC_August_2014_30_%28Franklin_Delano_Roosevelt_Memorial%29.jpg/250px-Washington_DC_August_2014_30_%28Franklin_Delano_Roosevelt_Memorial%29.jpg"
+    },
+    {
+      "statue_id": "1c64168e-ef47-4ad7-827c-0e952c610013",
+      "name": "Dog on the Tuckerbox",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/94/DogonTuckerbox.jpg/960px-DogonTuckerbox.jpg"
+    },
+    {
+      "statue_id": "1c64168e-ef47-4ad7-827c-0e952c610014",
+      "name": "Islay wishing well statue",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0d/%22Islay%22_Queen_Victoria_Building%2C_Sydney.jpg/1280px-%22Islay%22_Queen_Victoria_Building%2C_Sydney.jpg"
+    },
+    {
+      "statue_id": "1c64168e-ef47-4ad7-827c-0e952c610015",
+      "name": "Red Dog memorial statue",
+      "status": 200,
+      "content_type": "image/jpeg",
+      "verified": true,
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/9/97/Red_Dog_Statue_Front_View.jpg"
+    }
+  ]
+}

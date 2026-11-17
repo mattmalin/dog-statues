@@ -8,6 +8,7 @@ export default defineConfig(({ mode }) => {
   const literal = dataPath.replace(/[\[\]{}()*?+!@]/g, '\\$&');
   return {
     plugins: [sveltekit()],
+    optimizeDeps: { include: ['leaflet'] },
     server: {
       fs: {
         deny: ['.env', '.env.*', '*.{crt,pem}', '**/.git/**', literal + '/**', '**/.atlas/**'],

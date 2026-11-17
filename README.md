@@ -72,6 +72,12 @@ The owner area's **Potential future dog statues** catalogue stores research lead
 
 The catalogue uses explicit **Save potential statue** actions. It never publishes a record. SQLite adds migration 007 automatically; SQL deployments must run `npm.cmd run migrate` before releasing this feature. Azure's existing whole-database backups/BACPAC exports include `dog_statues.potential_statues`; local backups of the complete data directory include the SQLite table. After a recovery, check a research note, a pin and an archived entry as well as the statue posts.
 
+Its embedded map follows the same search, London and status filters as the list. Use **Fit results** after panning; tap numbered markers to see all entries at nearby or shared locations. Outlined markers are approximate research/postcode locations. Saved coordinates take priority, and records without a usable location are listed under **entries need coordinates**. Select **All** to include archived entries. Maps use Leaflet and attributed OpenStreetMap tiles, with no API key or paid Azure mapping resource.
+
+In a potential entry, **Research images → Add image link** accepts a direct HTTPS image URL, its source page, credit and licence/permission notes. **Use as thumbnail** moves an image first; save the record to keep the change. To add the curated images to existing candidates, use **Researched suggestions → Add researched images** on the catalogue page. Repeating it preserves existing links and the chosen first image. New researched suggestions include their image references automatically. The research includes product editions and a labelled 3D model render where an installation photograph was unavailable.
+
+Owner statue lists show the cover photo or first uploaded photo; potential lists show the first research image. Remote images may be moved, blocked or removed by their hosts. These are private reference links, not downloaded archival copies or publication permissions. Backups include the stored URLs, source pages, credits and notes. Apply SQL migration `008_potential_images.sql` before deployment; local SQLite migrates automatically. No Azure services or keys are added.
+
 For a focused catalogue check, set `$env:PLAYWRIGHT_CHANNEL = 'msedge'` if using installed Edge, then run `npx.cmd playwright test tests/potential.spec.ts --workers=1`. This uses the isolated test database, not your configured production database.
 
 ```powershell

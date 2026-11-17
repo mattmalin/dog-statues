@@ -91,7 +91,16 @@ test('capture three photos, reopen, edit, publish and hide with private media se
   await expect(page.getByText('Private photo', { exact: true })).toHaveCount(3);
   await page.getByRole('button', { name: 'Save draft' }).click();
   await expect(page.getByRole('heading', { name: 'Draft inbox' })).toBeVisible();
+  const firstThumbnail = await page
+    .locator('.records a[href="' + editor + '"] img')
+    .getAttribute('src');
   await page.goto(editor);
+  const firstPhotoUrl = await page
+    .locator('.photo-card')
+    .filter({ hasText: 'One.jpg' })
+    .locator('img')
+    .getAttribute('src');
+  expect(firstThumbnail).toBe(firstPhotoUrl + '?size=thumb');
   await expect(page.getByLabel('Private notes')).toHaveValue('PRIVATE RESEARCH MARKER');
   await page.getByRole('button', { name: 'Add source', exact: true }).click();
   await page.getByLabel('Source title').fill('PRIVATE SOURCE TITLE');
@@ -107,6 +116,8 @@ test('capture three photos, reopen, edit, publish and hide with private media se
   await third.getByRole('button', { name: 'Set cover' }).click();
   await expect(third.getByText('Cover · Private photo')).toBeVisible();
   const coverUrl = await third.locator('img').getAttribute('src');
+  const ownerList = await (await page.request.get('/admin/statues')).text();
+  expect(ownerList).toContain(coverUrl + '?size=thumb');
   const media = '/media/' + coverUrl?.split('/').at(-1);
   expect((await request.get(media)).status()).toBe(404);
   expect((await request.get(coverUrl + '?size=original')).status()).toBe(401);

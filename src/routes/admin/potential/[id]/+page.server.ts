@@ -17,6 +17,12 @@ export const actions: Actions = {
     const data = await request.formData();
     const text = (name: string) => String(data.get(name) ?? '');
     const number = (name: string) => (text(name).trim() ? Number(text(name)) : null);
+    let images: unknown;
+    try {
+      images = JSON.parse(text('images') || '[]');
+    } catch {
+      return fail(422, { error: 'The image list could not be read. Reload and try again.' });
+    }
     const fields = {
       name: text('name'),
       city: text('city'),
@@ -28,6 +34,7 @@ export const actions: Actions = {
       pin_checked: data.get('pin_checked') === 'on',
       source_url: text('source_url'),
       notes: text('notes'),
+      images,
       status: text('status'),
     };
     const input = potentialSaveSchema.safeParse({

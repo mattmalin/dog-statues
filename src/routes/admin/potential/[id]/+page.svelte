@@ -2,6 +2,7 @@
   import { enhance } from '$app/forms';
   import { page } from '$app/state';
   import WorkspaceNav from '$lib/components/WorkspaceNav.svelte';
+  import PotentialImages from '$lib/components/PotentialImages.svelte';
   import { potentialStatuses, type PotentialFields } from '$lib/potential';
   import { message, send } from '$lib/client';
   import { googleMapsUrl } from '$lib/maps';
@@ -158,6 +159,12 @@
         ></textarea></label
       >
     </section>
+    <PotentialImages
+      bind:images={fields.images}
+      onedit={() => {
+        dirty = true;
+      }}
+    />
     {#if form?.error}<p role="alert" class="error">{form.error}</p>{/if}
     {#if page.url.searchParams.has('saved') && !form?.error && !saving && !dirty}<p role="status">
         Potential statue saved.
