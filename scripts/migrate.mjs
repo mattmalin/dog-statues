@@ -26,20 +26,19 @@ try {
         CREATE TABLE dbo.atlas_migrations (filename NVARCHAR(160) PRIMARY KEY, applied_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME());
     `);
     const migrationTable = async () => {
-      const { recordset } = await transaction.request().query(
-        "SELECT OBJECT_ID('dog_statues.atlas_migrations','U') AS isolated",
-      );
-      return recordset[0].isolated === null ? 'dbo.atlas_migrations' : 'dog_statues.atlas_migrations';
+      const { recordset } = await transaction
+        .request()
+        .query("SELECT OBJECT_ID('dog_statues.atlas_migrations','U') AS isolated");
+      return recordset[0].isolated === null
+        ? 'dbo.atlas_migrations'
+        : 'dog_statues.atlas_migrations';
     };
     let ledger = await migrationTable();
     for (const file of files) {
       const request = () => transaction.request().input('filename', sql.NVarChar(160), file);
       if (
-        (
-          await request().query(
-            `SELECT filename FROM ${ledger} WHERE filename=@filename`,
-          )
-        ).recordset.length
+        (await request().query(`SELECT filename FROM ${ledger} WHERE filename=@filename`)).recordset
+          .length
       )
         continue;
       await transaction.request().batch(await readFile(new URL(file, folder), 'utf8'));
