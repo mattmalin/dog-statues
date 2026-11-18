@@ -10,6 +10,7 @@ import {
   type PublicPhoto,
 } from '$lib/model';
 import { database, writeLock } from './db';
+import { searchText, type DraftListRow } from '$lib/record-lists';
 
 const fieldNames = Object.keys(initialFields) as (keyof Fields)[];
 const adminColumns = `id, ${fieldNames.join(', ')}, slug, web_status, web_published_at,
@@ -62,23 +63,52 @@ export async function createDraft(id: string) {
 }
 
 export async function listDrafts(inbox: boolean) {
-  return database().all<
-    Pick<
-      Statue,
-      'id' | 'title' | 'city' | 'country' | 'web_status' | 'editorial_status' | 'updated_at'
-    > & { instagram_draft: string | null; thumbnail_media_id: string | null }
+  const rows = await database().all<
+    StoredStatue & { instagram_draft: string | null; thumbnail_media_id: string | null }
   >(
     `WITH ranked_photos AS (
       SELECT p.id, p.statue_id, ROW_NUMBER() OVER (
         PARTITION BY p.statue_id ORDER BY CASE WHEN p.id=s.cover_media_id THEN 0 ELSE 1 END, p.position, p.id
       ) AS photo_rank FROM media_assets p JOIN statues s ON s.id=p.statue_id
     )
-    SELECT s.id, s.title, s.city, s.country, s.web_status, s.editorial_status,
-      s.updated_at, s.instagram_draft, p.id AS thumbnail_media_id
+    SELECT ${adminColumns
+      .split(',')
+      .map((column) => 's.' + column.trim())
+      .join(', ')},
+      s.instagram_draft, p.id AS thumbnail_media_id
     FROM statues s LEFT JOIN ranked_photos p ON p.statue_id=s.id AND p.photo_rank=1
       ${inbox ? "WHERE s.web_status <> 'published' AND s.editorial_status <> 'ready'" : ''}
       ORDER BY s.updated_at DESC`,
   );
+  const photos = await database().all<Photo>(`SELECT ${photoColumns} FROM media_assets
+    WHERE statue_id IN (SELECT id FROM statues ${inbox ? "WHERE web_status <> 'published' AND editorial_status <> 'ready'" : ''})`);
+  const byStatue = new Map<string, Photo[]>();
+  for (const photo of photos) {
+    const key = photo.statue_id.toLowerCase();
+    const group = byStatue.get(key) ?? [];
+    group.push(photo);
+    byStatue.set(key, group);
+  }
+  return rows.map((stored): DraftListRow => {
+    const row = decodeStatue(stored);
+    const images = byStatue.get(row.id.toLowerCase()) ?? [];
+    let instagramDraft: unknown = stored.instagram_draft;
+    try {
+      instagramDraft = JSON.parse(stored.instagram_draft || 'null');
+    } catch {
+      /* Search legacy text as stored. */
+    }
+    return {
+      ...row,
+      instagram_draft: stored.instagram_draft,
+      thumbnail_media_id: stored.thumbnail_media_id,
+      photo_count: images.length,
+      missing_alt: images.some(
+        (image) => image.rights_status === 'approved' && !image.alt_text.trim(),
+      ),
+      search_text: searchText({ ...row, photos: images, instagram_draft: instagramDraft }),
+    };
+  });
 }
 
 export async function getDraft(id: string, db: Transaction = database(), lockRow = false) {

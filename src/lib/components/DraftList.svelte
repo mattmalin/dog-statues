@@ -1,27 +1,91 @@
 <script lang="ts">
   import WorkspaceNav from './WorkspaceNav.svelte';
   import RecordThumbnail from './RecordThumbnail.svelte';
-  import type { Statue } from '$lib/model';
+  import RecordListControls from './RecordListControls.svelte';
+  import {
+    matchesSearch,
+    places,
+    samePlace,
+    sortOptions,
+    sortRecords,
+    type DraftListRow,
+  } from '$lib/record-lists';
   let {
     rows,
     newId,
     view,
   }: {
-    rows: (Pick<
-      Statue,
-      'id' | 'title' | 'city' | 'country' | 'web_status' | 'editorial_status' | 'updated_at'
-    > & { instagram_draft: string | null; thumbnail_media_id: string | null })[];
+    rows: DraftListRow[];
     newId: string;
     view: 'workspace' | 'inbox' | 'all';
   } = $props();
   let search = $state('');
+  let status = $state('all');
+  let sort = $state('updated_desc');
+  let editorial = $state('all');
+  let visit = $state('all');
+  let country = $state('');
+  let city = $state('');
+  let photos = $state('all');
+  let map = $state('all');
+  let sources = $state('all');
+  let instagram = $state('all');
+  const countries = $derived(places(rows.map((row) => row.country)));
+  const cities = $derived(
+    places(
+      rows.filter((row) => !country || samePlace(row.country, country)).map((row) => row.city),
+    ),
+  );
+  const statuses = [
+    { value: 'all', label: 'All' },
+    { value: 'published', label: 'Published' },
+    { value: 'unpublished', label: 'Unpublished' },
+    { value: 'hidden', label: 'Hidden' },
+  ];
+  function clear() {
+    search = '';
+    status = 'all';
+    sort = 'updated_desc';
+    editorial = 'all';
+    visit = 'all';
+    country = '';
+    city = '';
+    photos = 'all';
+    map = 'all';
+    sources = 'all';
+    instagram = 'all';
+  }
   const labels = { workspace: 'Your workspace', inbox: 'Draft inbox', all: 'All statues' };
   const filtered = $derived(
-    rows.filter((row) =>
-      [row.title || 'Untitled statue', row.city, row.country]
-        .join(' ')
-        .toLowerCase()
-        .includes(search.trim().toLowerCase()),
+    sortRecords(
+      rows.filter(
+        (row) =>
+          matchesSearch(row.search_text, search) &&
+          (status === 'all' || row.web_status === status) &&
+          (editorial === 'all' || row.editorial_status === editorial) &&
+          (visit === 'all' || row.visit_status === visit) &&
+          (!country || samePlace(row.country, country)) &&
+          (!city || samePlace(row.city, city)) &&
+          (photos === 'all' ||
+            (photos === 'with'
+              ? row.photo_count > 0
+              : photos === 'without'
+                ? row.photo_count === 0
+                : row.missing_alt)) &&
+          (map === 'all' ||
+            (map === 'coordinates'
+              ? row.latitude !== null && row.longitude !== null
+              : map === 'link'
+                ? Boolean(row.google_maps_url)
+                : row.latitude === null && !row.google_maps_url)) &&
+          (sources === 'all' ||
+            (sources === 'with' ? row.sources.length > 0 : row.sources.length === 0)) &&
+          (instagram === 'all' ||
+            (instagram === 'with' ? Boolean(row.instagram_draft) : !row.instagram_draft)),
+      ),
+      sort,
+      (row) => row.title.trim() || 'Untitled statue',
+      (row) => row.photo_count,
     ),
   );
 </script>
@@ -46,14 +110,74 @@
       <button class="add-button"><span aria-hidden="true">＋</span> Add statue</button>
     </form>
   </div>
-  {#if view === 'all' && rows.length}
-    <label class="search"
-      >Find a statue<input
-        type="search"
-        bind:value={search}
-        placeholder="Name, city or country"
-      /></label
+  {#if view !== 'workspace'}
+    <RecordListControls
+      bind:search
+      bind:status
+      bind:sort
+      searchLabel="Find a statue"
+      {statuses}
+      sorts={sortOptions}
+      onclear={clear}
     >
+      <label
+        >Editorial status<select bind:value={editorial}
+          ><option value="all">All</option><option value="inbox">Inbox</option><option value="draft"
+            >Draft</option
+          ><option value="ready">Ready</option></select
+        ></label
+      >
+      <label
+        >Visit status<select bind:value={visit}
+          ><option value="all">All</option><option value="unvisited">Unvisited</option><option
+            value="visited">Visited</option
+          ></select
+        ></label
+      >
+      <label
+        >Country<select bind:value={country} onchange={() => (city = '')}
+          ><option value="">All countries</option>{#each countries as place}<option value={place}
+              >{place}</option
+            >{/each}</select
+        ></label
+      >
+      <label
+        >City<select bind:value={city}
+          ><option value="">All cities</option>{#each cities as place}<option value={place}
+              >{place}</option
+            >{/each}</select
+        ></label
+      >
+      <label
+        >Photos<select bind:value={photos}
+          ><option value="all">All</option><option value="with">With photos</option><option
+            value="without">Without photos</option
+          ><option value="missing-alt">Approved photos missing alt text</option></select
+        ></label
+      >
+      <label
+        >Map details<select bind:value={map}
+          ><option value="all">All</option><option value="coordinates">Saved coordinates</option
+          ><option value="link">Google Maps link saved</option><option value="missing"
+            >No coordinates or map link</option
+          ></select
+        ></label
+      >
+      <label
+        >Research sources<select bind:value={sources}
+          ><option value="all">All</option><option value="with">With sources</option><option
+            value="without">Without sources</option
+          ></select
+        ></label
+      >
+      <label
+        >Instagram preparation<select bind:value={instagram}
+          ><option value="all">All</option><option value="with">Saved draft</option><option
+            value="without">No saved draft</option
+          ></select
+        ></label
+      >
+    </RecordListControls>
   {/if}
   <div class="list-heading">
     <h2>
@@ -107,10 +231,10 @@
     </ul>
   {:else}
     <div class="empty">
-      <strong>{search ? 'No matches' : 'Nothing here yet'}</strong>
+      <strong>{rows.length ? 'No matches' : 'Nothing here yet'}</strong>
       <p>
-        {search
-          ? 'Try a different name or place.'
+        {rows.length
+          ? 'Try a different search or reset the filters.'
           : 'Tap Add statue to start with a photo or a quick note.'}
       </p>
     </div>
