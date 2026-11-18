@@ -12,6 +12,8 @@
   } from '$lib/model';
   import { message, RequestError, send, uploadId } from '$lib/client';
   import PhotoCard from './PhotoCard.svelte';
+  import Videos from './Videos.svelte';
+  import type { Video } from '$lib/video';
   import InstagramShare from './InstagramShare.svelte';
   import DeleteRecord from './DeleteRecord.svelte';
   import type { InstagramDraft, InstagramPublication } from '$lib/instagram';
@@ -19,6 +21,7 @@
   let {
     statue,
     photos: startPhotos,
+    videos: startVideos,
     capture,
     instagramEnabled,
     instagramPublication,
@@ -26,6 +29,7 @@
   }: {
     statue: Statue;
     photos: Photo[];
+    videos: Video[];
     capture: boolean;
     instagramEnabled: boolean;
     instagramPublication: InstagramPublication | null;
@@ -52,6 +56,7 @@
     fields: fieldsFrom(statue),
     photos: startPhotos,
     revision: statue.revision,
+    videos: startVideos,
     slug: statue.slug,
     webStatus: statue.web_status,
     cover: statue.cover_media_id,
@@ -61,6 +66,9 @@
   const initial = start();
   let fields = $state(initial.fields);
   let photos = $state(initial.photos);
+  let videos = $state(initial.videos);
+  let videoBusy = $state(false);
+  let videoPending = $state(false);
   const missingAlt = $derived(
     photos.filter((photo) => photo.rights_status === 'approved' && !photo.alt_text.trim()).length,
   );
@@ -103,11 +111,13 @@
           ? 'Saving…'
           : dirty
             ? 'Changes pending'
-            : uploadBusy
-              ? 'Uploading photos…'
-              : uploads.length
-                ? 'Photos need attention'
-                : 'Saved to Atlas',
+            : videoBusy
+              ? 'Uploading or processing videos…'
+              : uploadBusy
+                ? 'Uploading photos…'
+                : uploads.length || videoPending
+                  ? 'Uploads need attention'
+                  : 'Saved to Atlas',
   );
 
   function remember(value: string) {
@@ -157,14 +167,23 @@
       return;
     }
     if (
-      (!dirty && !saving && !uploads.length && !photoBusy && !publishing) ||
+      (!dirty &&
+        !saving &&
+        !uploads.length &&
+        !photoBusy &&
+        !publishing &&
+        !videoBusy &&
+        !videoPending) ||
       navigation.willUnload
     ) {
-      if (navigation.willUnload && (dirty || saving || uploads.length || photoBusy || publishing))
+      if (
+        navigation.willUnload &&
+        (dirty || saving || uploads.length || photoBusy || publishing || videoBusy || videoPending)
+      )
         navigation.cancel();
       return;
     }
-    if (!confirm('Some edits or photos have yet to save. Leave this editor?')) navigation.cancel();
+    if (!confirm('Some edits or uploads have yet to save. Leave this editor?')) navigation.cancel();
   });
 
   $effect(() => {
@@ -214,7 +233,7 @@
           result.status,
           'Could not reload the latest record. Sign in or try again.',
         );
-      const latest = (await result.json()) as { statue: Statue; photos: Photo[] };
+      const latest = (await result.json()) as { statue: Statue; photos: Photo[]; videos: Video[] };
       const serverFields = fieldsFrom(latest.statue);
       revision = latest.statue.revision;
       saved = JSON.stringify(serverFields);
@@ -223,6 +242,7 @@
       cover = latest.statue.cover_media_id;
       waivePhoto = latest.statue.photo_waiver;
       photos = latest.photos;
+      videos = latest.videos;
       if (!useMine) fields = serverFields;
       recoveryBase = undefined;
       conflict = false;
@@ -364,7 +384,7 @@
   }
 
   async function publication(action: 'publish' | 'unpublish') {
-    if (publishing || saving || conflict || uploadBusy || photoBusy) return;
+    if (publishing || saving || conflict || uploadBusy || photoBusy || videoBusy) return;
     publicationNotice = '';
     publicationError = '';
     const allowMissingAlt = action === 'publish' && missingAlt > 0;
@@ -373,8 +393,8 @@
         action === 'publish'
           ? allowMissingAlt
             ? 'Publish with missing alt text? The website will use a generic description until you add your own.'
-            : 'Make this statue and its approved photos public on the Atlas?'
-          : 'Hide this statue page and its photos from the public?',
+            : 'Make this statue and its approved photos and videos public on the Atlas?'
+          : 'Hide this statue page and its photos and videos from the public?',
       )
     )
       return;
@@ -469,7 +489,8 @@
   }
 
   async function removeRecord() {
-    if (saving || conflict || uploadBusy || photoBusy || publishing || deleting) return;
+    if (saving || conflict || uploadBusy || photoBusy || publishing || deleting || videoBusy)
+      return;
     deleting = true;
     try {
       await send(api, 'DELETE', { revision, confirmed: true });
@@ -514,9 +535,9 @@
 
   {#if !capture}
     <nav class="section-nav" aria-label="Editing sections">
-      <a href="#photos">Photos</a><a href="#overview">Overview</a><a href="#location">Location</a><a
-        href="#research">Research</a
-      ><a href="#publishing">Publishing</a>
+      <a href="#photos">Photos</a><a href="#videos">Videos</a><a href="#overview">Overview</a><a
+        href="#location">Location</a
+      ><a href="#research">Research</a><a href="#publishing">Publishing</a>
     </nav>
   {/if}
 
@@ -529,7 +550,7 @@
       <label class="file-button"
         ><span aria-hidden="true">⊕</span> Choose photos<input
           type="file"
-          disabled={!ready}
+          disabled={!ready || videoBusy}
           multiple
           accept="image/jpeg,image/png,image/webp,image/avif"
           onchange={choose}
@@ -538,7 +559,7 @@
       <label class="file-button secondary"
         ><span aria-hidden="true">◉</span> Take photo<input
           type="file"
-          disabled={!ready}
+          disabled={!ready || videoBusy}
           accept="image/*"
           capture="environment"
           onchange={choose}
@@ -551,7 +572,7 @@
         <button
           type="button"
           class="secondary"
-          disabled={allApproved || photoBusy || uploadBusy || publishing}
+          disabled={allApproved || photoBusy || uploadBusy || publishing || videoBusy}
           onclick={() => editAllPhotos('approve')}>I have permission for all of these photos</button
         >
       </div>
@@ -560,7 +581,7 @@
         <button
           type="button"
           class="secondary"
-          disabled={!photographer.trim() || photoBusy || uploadBusy || publishing}
+          disabled={!photographer.trim() || photoBusy || uploadBusy || publishing || videoBusy}
           onclick={() => editAllPhotos('credit')}>Set the photographer for all photos</button
         >
       </div>
@@ -576,7 +597,7 @@
             cover={cover === photo.id}
             first={index === 0}
             last={index === photos.length - 1}
-            busy={photoBusy || uploadBusy || publishing}
+            busy={photoBusy || uploadBusy || publishing || videoBusy}
             capture={capture && !advanced}
             onedit={(...args) => photoEdit(photo.id, args)}
           />
@@ -612,6 +633,14 @@
       </ul>
     {/if}
   </section>
+
+  <Videos
+    statueId={statue.id}
+    bind:videos
+    bind:busy={videoBusy}
+    bind:pending={videoPending}
+    locked={uploadBusy || photoBusy || publishing || deleting}
+  />
 
   <section class="panel" id="overview" aria-labelledby="overview-heading">
     <h2 id="overview-heading">{capture ? 'Quick details' : 'Overview'}</h2>
@@ -892,9 +921,11 @@
         </li>
         <li>
           <a href="#photos"
-            >{photos.some((photo) => photo.rights_status === 'approved') || waivePhoto
-              ? '✓ Photos'
-              : 'Approve a photo or choose to publish without photos'}</a
+            >{photos.some((photo) => photo.rights_status === 'approved') ||
+            videos.some((video) => video.rights_status === 'approved') ||
+            waivePhoto
+              ? '✓ Photos or videos'
+              : 'Approve a photo or video, or choose to publish without media'}</a
           >
         </li>
         {#if !fields.google_maps_url && (fields.latitude === null || fields.longitude === null)}<li>
@@ -904,7 +935,7 @@
       <button
         type="button"
         class="secondary"
-        disabled={publishing || saving || conflict || uploadBusy || photoBusy}
+        disabled={publishing || saving || conflict || uploadBusy || photoBusy || videoBusy}
         onclick={preview}>Private preview</button
       >
       {#if missingAlt}
@@ -922,20 +953,20 @@
           >
           <button
             class="secondary danger"
-            disabled={publishing || saving || conflict || uploadBusy || photoBusy}
+            disabled={publishing || saving || conflict || uploadBusy || photoBusy || videoBusy}
             onclick={() => publication('unpublish')}>Unpublish</button
           >
         </div>
       {/if}
       <p class="hint">
-        Add a name, public description and location. Approve at least one photo, or choose to
-        publish without photos.
+        Add a name, public description and location. Approve at least one photo or video, or choose
+        to publish without media.
       </p>
       <label class="check"
-        ><input type="checkbox" bind:checked={waivePhoto} /> Allow publication without photos</label
+        ><input type="checkbox" bind:checked={waivePhoto} /> Allow publication without photos or videos</label
       >
       <button
-        disabled={publishing || saving || conflict || uploadBusy || photoBusy}
+        disabled={publishing || saving || conflict || uploadBusy || photoBusy || videoBusy}
         onclick={() => publication('publish')}
         >{missingAlt
           ? 'Publish without alt text'
@@ -950,8 +981,8 @@
   <DeleteRecord
     name={fields.title.trim() || 'Untitled statue'}
     label="Delete statue"
-    explanation="Remove this statue, its saved details and photo links from the Atlas, including its public page. Existing Instagram posts will remain on Instagram."
-    disabled={saving || conflict || uploadBusy || photoBusy || publishing || deleting}
+    explanation="Remove this statue, its saved details and photo/video links from the Atlas, including its public page. Existing Instagram posts will remain on Instagram."
+    disabled={saving || conflict || uploadBusy || photoBusy || publishing || deleting || videoBusy}
     ondelete={removeRecord}
   />
 </main>
@@ -991,7 +1022,7 @@
       <span class:pending={dirty || saving}></span>{status}
     </div>
     <button
-      disabled={!ready || saving || conflict || uploadBusy || photoBusy || publishing}
+      disabled={!ready || saving || conflict || uploadBusy || photoBusy || publishing || videoBusy}
       onclick={done}>{capture ? 'Save draft' : 'Save & close'}</button
     >
   </div>

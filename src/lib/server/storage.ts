@@ -1,4 +1,6 @@
-import { readFile, writeFile, mkdir, rename, rm } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, rename, rm, copyFile, stat } from 'node:fs/promises';
+import { createReadStream } from 'node:fs';
+import { Readable } from 'node:stream';
 import { dirname, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { BlobServiceClient } from '@azure/storage-blob';
@@ -14,6 +16,82 @@ const service = config.blobConnection
     : null;
 const container = service?.getContainerClient(config.blobContainer);
 const filePath = (key: string) => join(config.dataDir, 'media', key);
+export async function putMediaFile(key: string, source: string) {
+  if (container) {
+    await container
+      .getBlockBlobClient(key)
+      .uploadFile(source, { concurrency: 1, blockSize: 4 * 1024 * 1024 });
+    return;
+  }
+  const target = filePath(key);
+  const temporary = target + '.' + randomUUID() + '.tmp';
+  await mkdir(dirname(target), { recursive: true });
+  try {
+    await copyFile(source, temporary);
+    await rename(temporary, target);
+  } finally {
+    await rm(temporary, { force: true });
+  }
+}
+
+export async function streamMedia(key: string, request: Request, mime: string, attachment = false) {
+  try {
+    const blob = container?.getBlockBlobClient(key);
+    const size = blob
+      ? (await blob.getProperties()).contentLength!
+      : (await stat(filePath(key))).size;
+    const headers: Record<string, string> = {
+      'content-type': mime,
+      'cache-control': 'private, no-store',
+      'accept-ranges': 'bytes',
+      ...(attachment ? { 'content-disposition': 'attachment' } : {}),
+    };
+    const range = request.headers.get('range');
+    let start = 0,
+      end = size - 1;
+    if (range) {
+      const match = /^bytes=(\d*)-(\d*)$/.exec(range);
+      if (!match || (!match[1] && !match[2]))
+        return new Response(null, {
+          status: 416,
+          headers: { ...headers, 'content-range': `bytes */${size}` },
+        });
+      if (!match[1]) start = Math.max(0, size - Number(match[2]));
+      else {
+        start = Number(match[1]);
+        if (match[2]) end = Math.min(end, Number(match[2]));
+      }
+      if (
+        !Number.isSafeInteger(start) ||
+        !Number.isSafeInteger(end) ||
+        start > end ||
+        start >= size
+      )
+        return new Response(null, {
+          status: 416,
+          headers: { ...headers, 'content-range': `bytes */${size}` },
+        });
+      headers['content-range'] = `bytes ${start}-${end}/${size}`;
+    }
+    headers['content-length'] = String(end - start + 1);
+    if (request.method === 'HEAD')
+      return new Response(null, { status: range ? 206 : 200, headers });
+    const stream = blob
+      ? ((await blob.download(start, end - start + 1)).readableStreamBody as Readable)
+      : createReadStream(filePath(key), { start, end });
+    return new Response(Readable.toWeb(stream) as ReadableStream<Uint8Array>, {
+      status: range ? 206 : 200,
+      headers,
+    });
+  } catch (cause) {
+    if (
+      (cause as NodeJS.ErrnoException).code === 'ENOENT' ||
+      (cause as { statusCode?: number }).statusCode === 404
+    )
+      error(404, 'Video file not found.');
+    throw cause;
+  }
+}
 export type Variant = 'web' | 'thumb' | 'original';
 export const photoKey = (statue: string, id: string, variant: Variant) =>
   `${statue}/${id}/${variant}`;

@@ -14,6 +14,8 @@
   const photoUrl = (id: string) =>
     data.preview ? '/api/admin/statues/' + data.id + '/photos/' + id + '?size=web' : '/media/' + id;
   const pin = $derived(googleMapsUrl(data.statue.google_maps_url)?.href);
+  const videoUrl = (id: string) =>
+    data.preview ? '/api/admin/statues/' + data.id + '/videos/' + id : '/videos/' + id;
 </script>
 
 <svelte:head>
@@ -54,7 +56,7 @@
       >
     </section>
   {/if}
-  {#if data.photos.length > 1}
+  {#if data.photos.length > 1 || data.videos.length}
     <section>
       <h2>{copy.statue.gallery}</h2>
       <div class="gallery">
@@ -70,7 +72,42 @@
             {#if photo.credit}<figcaption>{photo.credit}</figcaption>{/if}
           </figure>
         {/each}
+        {#each data.videos as video (video.id)}
+          <figure>
+            <video
+              controls
+              playsinline
+              preload="none"
+              src={videoUrl(video.id)}
+              poster={videoUrl(video.id) + '?size=poster'}
+              width={video.width}
+              height={video.height}
+              aria-label={video.description || data.statue.title}
+            >
+              <track
+                kind="captions"
+                src={videoUrl(video.id) + '?captions=1'}
+                srclang="en"
+                label={video.description || data.statue.title}
+              />
+            </video>
+            {#if video.description || video.credit}<figcaption>
+                {video.description}{video.description && video.credit ? ' · ' : ''}{video.credit}
+              </figcaption>{/if}
+          </figure>
+        {/each}
       </div>
     </section>
   {/if}
 </main>
+
+<style>
+  video {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 75svh;
+    background: #17131f;
+    border-radius: 12px;
+  }
+</style>

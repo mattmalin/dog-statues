@@ -11,6 +11,8 @@ import {
 } from '$lib/model';
 import { database, writeLock } from './db';
 import { searchText, type DraftListRow } from '$lib/record-lists';
+import { getVideos, videoColumns } from './videos';
+import type { Video, PublicVideo } from '$lib/video';
 
 const fieldNames = Object.keys(initialFields) as (keyof Fields)[];
 const adminColumns = `id, ${fieldNames.join(', ')}, slug, web_status, web_published_at,
@@ -83,6 +85,15 @@ export async function listDrafts(inbox: boolean) {
   const photos = await database().all<Photo>(`SELECT ${photoColumns} FROM media_assets
     WHERE statue_id IN (SELECT id FROM statues ${inbox ? "WHERE web_status <> 'published' AND editorial_status <> 'ready'" : ''})`);
   const byStatue = new Map<string, Photo[]>();
+  const videos = await database().all<Video>(`SELECT ${videoColumns} FROM video_assets
+    WHERE statue_id IN (SELECT id FROM statues ${inbox ? "WHERE web_status <> 'published' AND editorial_status <> 'ready'" : ''})`);
+  const byVideo = new Map<string, Video[]>();
+  for (const video of videos) {
+    const key = video.statue_id.toLowerCase();
+    const group = byVideo.get(key) ?? [];
+    group.push(video);
+    byVideo.set(key, group);
+  }
   for (const photo of photos) {
     const key = photo.statue_id.toLowerCase();
     const group = byStatue.get(key) ?? [];
@@ -106,7 +117,12 @@ export async function listDrafts(inbox: boolean) {
       missing_alt: images.some(
         (image) => image.rights_status === 'approved' && !image.alt_text.trim(),
       ),
-      search_text: searchText({ ...row, photos: images, instagram_draft: instagramDraft }),
+      search_text: searchText({
+        ...row,
+        photos: images,
+        videos: byVideo.get(row.id.toLowerCase()),
+        instagram_draft: instagramDraft,
+      }),
     };
   });
 }
@@ -120,6 +136,7 @@ export async function getDraft(id: string, db: Transaction = database(), lockRow
   return {
     statue: decodeStatue(statue),
     photos: await getPhotos(db, id),
+    videos: await getVideos(id, db),
   };
 }
 
@@ -159,6 +176,7 @@ export async function deleteStatue(id: string, revision: number) {
       );
     await db.run('DELETE FROM instagram_publications WHERE statue_id=@id', { id });
     await db.run('DELETE FROM media_assets WHERE statue_id=@id', { id });
+    await db.run('DELETE FROM video_assets WHERE statue_id=@id', { id });
     await db.run('DELETE FROM statues WHERE id=@id', { id });
   });
 }
@@ -172,7 +190,7 @@ function validatePublication(fields: Fields, photosReady: boolean) {
   ) {
     error(422, 'Add a city and country, or both coordinates.');
   }
-  if (!photosReady) error(422, 'Approve a photo, or explicitly publish without photos.');
+  if (!photosReady) error(422, 'Approve a photo or video, or explicitly publish without media.');
 }
 
 export async function publish(
@@ -188,7 +206,13 @@ export async function publish(
     const now = new Date().toISOString();
     if (action === 'publish') {
       const photos = await getPhotos(db, id);
-      validatePublication(row, waivePhoto || photos.some(isPublicPhoto));
+      const videos = await getVideos(id, db);
+      validatePublication(
+        row,
+        waivePhoto ||
+          photos.some(isPublicPhoto) ||
+          videos.some((video) => video.rights_status === 'approved'),
+      );
       if (
         !allowMissingAlt &&
         photos.some((photo) => isPublicPhoto(photo) && !photo.alt_text.trim())
@@ -199,7 +223,7 @@ export async function publish(
         );
       }
       const slug = row.slug ?? slugFor(row.title, id);
-      const snapshot = publicVersion({ ...row, slug }, photos);
+      const snapshot = publicVersion({ ...row, slug }, photos, videos);
       await db.run(
         `UPDATE statues SET slug=@slug, web_status='published', web_published_at=COALESCE(web_published_at,@now),
          published_snapshot=@snapshot, photo_waiver=@waiver, updated_at=@now, revision=revision+1 WHERE id=@id`,
@@ -340,9 +364,13 @@ export async function editAllPhotos(
   });
 }
 
-type PublicVersion = { statue: PublicStatue; photos: PublicPhoto[] };
+type PublicVersion = { statue: PublicStatue; photos: PublicPhoto[]; videos?: PublicVideo[] };
 
-function publicVersion(row: Statue & { slug: string }, photos: Photo[]): PublicVersion {
+function publicVersion(
+  row: Statue & { slug: string },
+  photos: Photo[],
+  videos: Video[] = [],
+): PublicVersion {
   const {
     title,
     short_summary,
@@ -374,6 +402,17 @@ function publicVersion(row: Statue & { slug: string }, photos: Photo[]): PublicV
       cover_media_id,
       slug,
     },
+    videos: videos
+      .filter((video) => video.rights_status === 'approved')
+      .map(({ id, description, credit, captions, width, height, duration_seconds }) => ({
+        id,
+        description,
+        credit,
+        captions,
+        width,
+        height,
+        duration_seconds,
+      })),
     photos: photos.filter(isPublicPhoto).map(({ id, alt_text, credit, width, height }) => ({
       id,
       alt_text,
@@ -388,7 +427,14 @@ function withCover(version: PublicVersion, preview = false, id?: string) {
   const { statue, photos } = version;
   const cover =
     photos.find((photo) => photo.id === statue.cover_media_id?.toLowerCase()) ?? photos[0];
-  return { statue: { ...statue, cover_media_id: cover?.id ?? null }, cover, photos, preview, id };
+  return {
+    statue: { ...statue, cover_media_id: cover?.id ?? null },
+    cover,
+    photos,
+    videos: version.videos ?? [],
+    preview,
+    id,
+  };
 }
 
 async function publishedVersions() {
@@ -440,9 +486,9 @@ export async function getPublicStatue(slug: string) {
 }
 
 export async function getPreview(id: string) {
-  const { statue, photos } = await getDraft(id);
+  const { statue, photos, videos } = await getDraft(id);
   return withCover(
-    publicVersion({ ...statue, slug: statue.slug ?? slugFor(statue.title, id) }, photos),
+    publicVersion({ ...statue, slug: statue.slug ?? slugFor(statue.title, id) }, photos, videos),
     true,
     id,
   );
@@ -454,4 +500,17 @@ export async function publicPhoto(id: string) {
   );
   if (!version) error(404, 'Photo not found.');
   return { statue_id: version.id };
+}
+
+export async function publicVideo(id: string) {
+  const version = (await publishedVersions()).find((item) =>
+    item.videos.some((video) => video.id === id),
+  );
+  if (!version) error(404, copy.statue.unavailable);
+  const [row] = await database().all(
+    'SELECT id FROM video_assets WHERE statue_id=@statue AND id=@id',
+    { statue: version.id, id },
+  );
+  if (!row) error(404, copy.statue.unavailable);
+  return { statue_id: version.id, video: version.videos.find((video) => video.id === id)! };
 }

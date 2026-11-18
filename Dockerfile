@@ -6,7 +6,8 @@ COPY . .
 RUN npm run build && npm prune --omit=dev
 
 FROM node:24-bookworm-slim
-ENV NODE_ENV=production HOST=0.0.0.0 PORT=8080 BODY_SIZE_LIMIT=26M
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg && rm -rf /var/lib/apt/lists/*
+ENV NODE_ENV=production HOST=0.0.0.0 PORT=8080 BODY_SIZE_LIMIT=101M
 WORKDIR /atlas
 COPY --from=build --chown=node:node /atlas/package.json /atlas/package-lock.json ./
 COPY --from=build --chown=node:node /atlas/build ./build

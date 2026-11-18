@@ -74,6 +74,10 @@ function sqliteClient(): Client {
       db.exec(readFileSync('migrations/sqlite/008_potential_images.sql', 'utf8'));
       db.exec('PRAGMA user_version=8');
     }
+    if (version < 9) {
+      db.exec(readFileSync('migrations/sqlite/009_videos.sql', 'utf8'));
+      db.exec('PRAGMA user_version=9');
+    }
     db.exec('COMMIT');
   } catch (cause) {
     db.exec('ROLLBACK');
